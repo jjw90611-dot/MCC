@@ -13,10 +13,8 @@ st.set_page_config(page_title="나만의 마음 상담소", page_icon="🌿", la
 # ==========================================
 # [Gemini AI 설정] 제공해주신 API 키 적용
 # ==========================================
-# 주의: 실제 서비스 배포 시에는 API 키를 코드에 직접 넣지 않고 st.secrets 등을 활용하는 것이 안전합니다.
 GEMINI_API_KEY = "AIzaSyBP-dsVMyZCu-IcJ4ezOpvNCoUHQ8wFOKA"
 genai.configure(api_key=GEMINI_API_KEY)
-# 최신 빠르고 가벼운 모델 사용
 model = genai.GenerativeModel('gemini-1.5-flash') 
 
 # ==========================================
@@ -40,10 +38,8 @@ conn.commit()
 # ==========================================
 st.markdown("""
 <style>
-    /* 전체 배경 및 폰트 */
     .stApp { background-color: #0f172a; color: #f8fafc; font-family: 'Pretendard', 'Segoe UI', sans-serif; }
     
-    /* 타이틀 반응형 */
     .main-title { 
         font-size: 42px; font-weight: 900; 
         background: -webkit-linear-gradient(45deg, #34d399, #3b82f6);
@@ -53,17 +49,15 @@ st.markdown("""
     }
     .sub-title { color: #cbd5e1; font-size: 18px; margin-bottom: 30px; font-weight: 500; text-align: center; }
     
-    /* 로그인 박스 가독성 극대화 */
     .login-box {
-        background: rgba(15, 23, 42, 0.95); /* 배경을 아주 어둡게 */
-        border: 2px solid #3b82f6; /* 테두리 강조 */
+        background: rgba(15, 23, 42, 0.95); 
+        border: 2px solid #3b82f6; 
         border-radius: 16px; padding: 40px 30px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
         width: 90%; max-width: 400px; margin: 50px auto; text-align: center;
     }
     .login-box h3 { color: #ffffff !important; font-weight: 800; margin-bottom: 20px; }
     
-    /* 기록 카드 */
     .record-card {
         background: linear-gradient(145deg, #1e293b, #0f172a);
         border-left: 4px solid #3b82f6; border-radius: 12px; padding: 20px;
@@ -73,7 +67,6 @@ st.markdown("""
     .record-worry { color: #ffffff; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.5; }
     .record-answer { color: #e2e8f0; font-size: 15px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; line-height: 1.6; }
     
-    /* 모바일 최적화 (화면이 작아질 때 폰트 크기 축소) */
     @media (max-width: 768px) {
         .main-title { font-size: 32px; }
         .sub-title { font-size: 15px; }
@@ -103,7 +96,6 @@ if not st.session_state['logged_in']:
     </div>
     """, unsafe_allow_html=True)
     
-    # Streamlit 위젯은 HTML 안에 직접 넣을 수 없으므로 컬럼으로 중앙 정렬
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         emp_input = st.text_input("사번을 입력해주세요", placeholder="예: 123456", label_visibility="collapsed")
@@ -130,7 +122,6 @@ else:
             st.session_state['emp_id'] = ""
             st.rerun()
 
-    # 탭 5개로 확장 (미니게임 추가)
     tab1, tab2, tab3, tab4, tab5 = st.tabs(["💬 새로운 상담", "📚 나의 마음 기록", "📊 스트레스 분석", "🌙 수면 사운드", "🎮 스트레스 타파"])
 
     # ------------------------------------------
@@ -146,7 +137,6 @@ else:
             else:
                 with st.spinner("AI 심리상담사가 당신의 마음을 읽고 위로의 말을 준비하고 있습니다..."):
                     try:
-                        # Gemini에게 프롬프트 전달 (상담사 역할 부여)
                         prompt = f"""
                         당신은 직장인들의 마음을 치유해주는 따뜻하고 공감 능력이 뛰어난 전문 심리 상담사입니다.
                         내담자가 다음과 같은 고민을 털어놓았습니다: "{worry_input}"
@@ -156,7 +146,6 @@ else:
                         response = model.generate_content(prompt)
                         answer = response.text
                         
-                        # DB 저장
                         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         c.execute("INSERT INTO counseling_records (emp_id, date, worry, answer) VALUES (?, ?, ?, ?)", 
                                   (st.session_state['emp_id'], now, worry_input, answer))
@@ -213,7 +202,7 @@ else:
         st.markdown(f"#### 📊 당신의 현재 예상 스트레스 지수: **<span style='color:#f43f5e;'>{s_score:.1f}점</span>**", unsafe_allow_html=True)
 
     # ------------------------------------------
-    # [탭 4] 수면 & 힐링 사운드 (재생 가능한 링크로 교체)
+    # [탭 4] 수면 & 힐링 사운드
     # ------------------------------------------
     with tab4:
         st.markdown("### 🌙 깊은 수면과 휴식을 위한 사운드")
@@ -230,20 +219,17 @@ else:
         elif "빗소리" in sound_choice:
             st.video("https://www.youtube.com/watch?v=mPZkdNFkNps")
         elif "주파수" in sound_choice:
-            # 임베드 허용된 확실한 432Hz 영상
             st.video("https://www.youtube.com/watch?v=7tNtU5XFwrU")
         elif "파도" in sound_choice:
-            # 임베드 허용된 확실한 파도소리 영상
             st.video("https://www.youtube.com/watch?v=bn9F19Hi1Lk")
 
     # ------------------------------------------
-    # [탭 5] 스트레스 타파 미니게임 (HTML/JS/사운드)
+    # [탭 5] 스트레스 타파 미니게임
     # ------------------------------------------
     with tab5:
         st.markdown("### 🎮 스트레스 타파 미니게임")
         st.markdown("휴대폰 터치나 마우스 클릭으로 스트레스를 날려버리세요! (소리를 켜주세요 🔊)")
         
-        # HTML, CSS, JS를 활용하여 클라이언트(브라우저) 단에서 즉각 반응하는 게임 구현
         game_html = """
         <!DOCTYPE html>
         <html>
@@ -253,7 +239,6 @@ else:
             body { font-family: sans-serif; color: white; margin: 0; padding: 10px; background: transparent; user-select: none; }
             h4 { color: #34d399; margin-bottom: 10px; }
             
-            /* 뽁뽁이 게임 CSS */
             .bubble-wrap { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 10px; margin-bottom: 40px; }
             .bubble { 
                 width: 50px; height: 50px; background: rgba(255,255,255,0.2); 
@@ -267,7 +252,6 @@ else:
                 border: 1px solid rgba(255,255,255,0.1);
             }
             
-            /* 개미 게임 CSS */
             .ant-game-area { 
                 position: relative; width: 100%; height: 350px; 
                 background: #8b5a2b; border-radius: 12px; overflow: hidden; 
@@ -297,7 +281,6 @@ else:
         <div class="ant-game-area" id="antContainer"></div>
 
         <script>
-            // 효과음 설정 (무료 효과음 URL)
             const popSoundUrl = 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3';
             const squishSoundUrl = 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3';
 
@@ -307,12 +290,10 @@ else:
                 audio.play().catch(e => console.log("Audio play blocked by browser"));
             }
 
-            // 1. 뽁뽁이 생성 로직
             const bubbleContainer = document.getElementById('bubbleContainer');
             for(let i=0; i<24; i++) {
                 let b = document.createElement('div');
                 b.className = 'bubble';
-                // 터치(모바일)와 클릭(PC) 모두 지원
                 b.addEventListener('pointerdown', function() {
                     if(!this.classList.contains('popped')) {
                         this.classList.add('popped');
@@ -322,7 +303,6 @@ else:
                 bubbleContainer.appendChild(b);
             }
 
-            // 2. 개미 잡기 로직
             const antContainer = document.getElementById('antContainer');
             
             function spawnAnts(count) {
@@ -331,7 +311,6 @@ else:
                     ant.className = 'ant';
                     ant.innerHTML = '🐜';
                     
-                    // 초기 위치 랜덤
                     let x = Math.random() * (antContainer.clientWidth - 30);
                     let y = Math.random() * (antContainer.clientHeight - 30);
                     ant.style.left = x + 'px';
@@ -340,51 +319,43 @@ else:
                     antContainer.appendChild(ant);
                     moveAnt(ant);
 
-                    // 개미 터치/클릭 시
                     ant.addEventListener('pointerdown', function() {
                         if(this.innerHTML === '🐜') {
-                            this.innerHTML = '💥'; // 터진 모양으로 변경
+                            this.innerHTML = '💥'; 
                             playSound(squishSoundUrl);
                             this.style.transform = 'scale(1.5)';
-                            // 1초 뒤 사라짐
                             setTimeout(() => { this.remove(); }, 1000);
                         }
                     });
                 }
             }
 
-            // 개미 무작위 이동 로직
             function moveAnt(ant) {
                 setInterval(() => {
-                    if(ant.innerHTML === '💥') return; // 죽은 개미는 안 움직임
+                    if(ant.innerHTML === '💥') return; 
                     
                     let currentX = parseFloat(ant.style.left);
                     let currentY = parseFloat(ant.style.top);
                     
-                    // -20 ~ +20 픽셀씩 이동
                     let newX = currentX + (Math.random() * 40 - 20);
                     let newY = currentY + (Math.random() * 40 - 20);
                     
-                    // 화면 밖으로 안 나가게 제한
                     newX = Math.max(0, Math.min(newX, antContainer.clientWidth - 30));
                     newY = Math.max(0, Math.min(newY, antContainer.clientHeight - 30));
                     
-                    // 이동 방향에 따라 개미 회전 (간단한 시각 효과)
                     let angle = Math.atan2(newY - currentY, newX - currentX) * 180 / Math.PI;
                     ant.style.transform = `rotate(${angle + 90}deg)`;
                     
                     ant.style.left = newX + 'px';
                     ant.style.top = newY + 'px';
-                }, 500); // 0.5초마다 방향 전환
+                }, 500); 
             }
 
-            // 시작할 때 기본 3마리 생성
             spawnAnts(3);
         </script>
         </body>
         </html>
         """
-        # Streamlit에 HTML/JS 게임 임베드 (높이를 넉넉하게 800으로 설정)
         components.html(game_html, height=800, scrolling=False)
 
 # ==========================================
