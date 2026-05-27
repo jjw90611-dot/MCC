@@ -4,7 +4,7 @@ import sqlite3
 import datetime
 import time
 import random
-import google.generativeai as genai
+import requests # 구글 패키지 대신 파이썬 기본 통신 모듈을 사용합니다!
 
 # ==========================================
 # [초기 설정] 페이지 세팅
@@ -12,18 +12,13 @@ import google.generativeai as genai
 st.set_page_config(page_title="스마트 마음 상담 센터", page_icon="🌙", layout="wide")
 
 # ==========================================
-# [Gemini AI 설정] - 100% 무료 모델(gemini-pro) 적용
+# [API 키 설정]
 # ==========================================
-# ⚠️ 주의: 깃허브에 API 키가 노출되지 않도록 스트림릿 비밀금고(Secrets)에서 키를 불러옵니다.
 try:
     GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 except:
     st.error("⚠️ 스트림릿 설정(Settings) -> Secrets에 'GEMINI_API_KEY'를 먼저 입력해주세요!")
     st.stop()
-
-genai.configure(api_key=GEMINI_API_KEY)
-# 구글에서 무료로 제공하는 최신 빠르고 가벼운 모델입니다.
-model = genai.GenerativeModel('gemini-1.5-flash') 
 
 # ==========================================
 # [데이터베이스 설정] SQLite3
@@ -278,7 +273,7 @@ else:
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["💬 AI 마음 상담", "📚 나의 기록", "📊 스트레스 분석", "🌙 수면 사운드", "🎮 스트레스 타파", "📅 D-day 관리"])
 
     # ------------------------------------------
-    # [탭 1] AI 마음 상담 (무료 제미나이 적용)
+    # [탭 1] AI 마음 상담 (직접 통신 방식)
     # ------------------------------------------
     with tab1:
         col_t1, col_t2 = st.columns([4, 1])
@@ -323,20 +318,33 @@ else:
                             
                             위 문맥을 참고하여, 내담자의 새로운 질문에 깊이 공감해주고 마음이 편안해질 수 있는 따뜻한 위로와 조언을 3~4문단으로 작성해주세요. 말투는 '~해요', '~습니다' 등 다정하고 존중하는 어투를 사용하세요.
                             """
-                            response = model.generate_content(prompt)
-                            answer = response.text
                             
-                            now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            c.execute("INSERT INTO counseling_records (user_id, date, worry, answer) VALUES (?, ?, ?, ?)", 
-                                      (st.session_state['user_id'], now, worry_input, answer))
-                            conn.commit()
+                            # 🚨 구글 패키지를 쓰지 않고, 파이썬 기본 기능으로 직접 구글 서버에 요청을 보냅니다.
+                            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+                            headers = {'Content-Type': 'application/json'}
+                            payload = {
+                                "contents": [{"parts": [{"text": prompt}]}]
+                            }
                             
-                            st.session_state['chat_session'].append({'worry': worry_input, 'answer': answer})
-                            st.rerun()
+                            response = requests.post(url, headers=headers, json=payload)
+                            
+                            if response.status_code == 200:
+                                answer = response.json()['candidates'][0]['content']['parts'][0]['text']
+                                
+                                now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                c.execute("INSERT INTO counseling_records (user_id, date, worry, answer) VALUES (?, ?, ?, ?)", 
+                                          (st.session_state['user_id'], now, worry_input, answer))
+                                conn.commit()
+                                
+                                st.session_state['chat_session'].append({'worry': worry_input, 'answer': answer})
+                                st.rerun()
+                            else:
+                                st.error("⚠️ 구글 AI 서버에서 오류를 반환했습니다.")
+                                st.error(f"상세 오류: {response.text}")
+                                
                         except Exception as e:
-                            st.error("⚠️ AI 응답 중 오류가 발생했습니다.")
+                            st.error("⚠️ 통신 중 오류가 발생했습니다.")
                             st.error(f"상세 오류 메시지: {e}")
-                            st.info("💡 해결 팁: 깃허브 requirements.txt 파일에 'google-generativeai>=0.5.2' 가 있는지 확인해주세요!")
 
     # ------------------------------------------
     # [탭 2] 나의 마음 기록
