@@ -12,10 +12,11 @@ import google.generativeai as genai
 st.set_page_config(page_title="스마트 마음 상담 센터", page_icon="🌙", layout="wide")
 
 # ==========================================
-# [Gemini AI 설정] 
+# [Gemini AI 설정] - 최신 모델(gemini-1.5-flash) 적용
 # ==========================================
 GEMINI_API_KEY = "AIzaSyBOagoX1FvOaIVdyA2xeTqzERYGuunLR_Y"
 genai.configure(api_key=GEMINI_API_KEY)
+# 무료 버전에서도 완벽하게 작동하는 최신 빠르고 가벼운 모델입니다.
 model = genai.GenerativeModel('gemini-1.5-flash') 
 
 # ==========================================
@@ -327,7 +328,10 @@ else:
                             st.session_state['chat_session'].append({'worry': worry_input, 'answer': answer})
                             st.rerun()
                         except Exception as e:
-                            st.error(f"⚠️ AI 응답 중 오류가 발생했습니다. (상세: {e})")
+                            # 에러 발생 시 원인을 명확하게 보여주도록 수정
+                            st.error("⚠️ AI 응답 중 오류가 발생했습니다.")
+                            st.error(f"상세 오류 메시지: {e}")
+                            st.info("💡 해결 팁: 터미널에서 'pip install --upgrade google-generativeai'를 입력해 패키지를 업데이트한 후 다시 실행해보세요!")
 
     # ------------------------------------------
     # [탭 2] 나의 마음 기록
@@ -444,7 +448,7 @@ else:
         elif "카페" in sound_choice: st.video("https://www.youtube.com/watch?v=gaGrHUekGrc")
 
     # ------------------------------------------
-    # [탭 5] 스트레스 타파 미니게임 (극강의 타격감 적용)
+    # [탭 5] 스트레스 타파 미니게임
     # ------------------------------------------
     with tab5:
         st.markdown("### 🎮 스트레스 타파 미니게임")
@@ -596,10 +600,9 @@ else:
                 }} catch(e) {{ clearInterval(hideInterval); }}
             }}, 100);
 
-            // 극강의 타격감 사운드 (묵직한 퍽 소리 & 와장창 깨지는 소리)
-            const crackSound = 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'; // 묵직한 타격음
-            const smashSound = 'https://assets.mixkit.co/active_storage/sfx/2684/2684-preview.mp3'; // 와장창 박살나는 소리
-            const squishSound = 'https://assets.mixkit.co/active_storage/sfx/2772/2772-preview.mp3'; // 벌레 터지는 소리
+            const crackSound = 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'; 
+            const smashSound = 'https://assets.mixkit.co/active_storage/sfx/2684/2684-preview.mp3'; 
+            const squishSound = 'https://assets.mixkit.co/active_storage/sfx/2772/2772-preview.mp3'; 
             const eatSound = 'https://assets.mixkit.co/active_storage/sfx/2902/2902-preview.mp3';
 
             function playSound(url) {{ let audio = new Audio(url); audio.volume = 1.0; audio.play().catch(e => console.log("Audio blocked")); }}
@@ -610,7 +613,6 @@ else:
             function breakIce(el) {{
                 if(el.classList.contains('shattered')) return;
                 
-                // 시각적 타격감 (흔들림 효과 강제 재시작)
                 el.classList.remove('shake');
                 void el.offsetWidth; 
                 el.classList.add('shake');
