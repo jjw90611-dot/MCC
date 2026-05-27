@@ -12,7 +12,7 @@ import google.generativeai as genai
 st.set_page_config(page_title="스마트 마음 상담 센터", page_icon="🌙", layout="wide")
 
 # ==========================================
-# [Gemini AI 설정] - 100% 무료 모델(gemini-1.5-flash) 적용
+# [Gemini AI 설정] - 100% 무료 모델(gemini-pro) 적용
 # ==========================================
 # ⚠️ 주의: 깃허브에 API 키가 노출되지 않도록 스트림릿 비밀금고(Secrets)에서 키를 불러옵니다.
 try:
@@ -23,7 +23,7 @@ except:
 
 genai.configure(api_key=GEMINI_API_KEY)
 # 구글에서 무료로 제공하는 최신 빠르고 가벼운 모델입니다.
-model = genai.GenerativeModel('gemini-1.5-flash') 
+model = genai.GenerativeModel('gemini-pro') 
 
 # ==========================================
 # [데이터베이스 설정] SQLite3
