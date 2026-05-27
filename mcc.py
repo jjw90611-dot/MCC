@@ -113,27 +113,23 @@ st.markdown("""
     .counseling-table th { background: linear-gradient(45deg, #3b82f6, #8b5cf6); color: #ffffff; padding: 12px; font-weight: 900; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 14px; white-space: nowrap; }
     .counseling-table td { padding: 12px; border: 1px solid rgba(255, 255, 255, 0.1); vertical-align: middle; line-height: 1.4; }
 
-    /* ==========================================
-       [가독성 극대화] 라디오 버튼 (스트레스 진단) 디자인
-       ========================================== */
+    /* 라디오 버튼 (스트레스 진단) 공통 디자인 */
     div[role="radiogroup"] {
-        background-color: rgba(15, 23, 42, 0.8) !important; /* 배경을 더 어둡게 눌러서 글자가 돋보이게 */
+        background-color: rgba(15, 23, 42, 0.8) !important;
         padding: 20px !important;
         border-radius: 12px !important;
         border: 1px solid rgba(192, 132, 252, 0.6) !important;
         box-shadow: 0px 4px 10px rgba(0,0,0,0.3) !important;
     }
-
-    /* 라디오 버튼 안의 글자(선택지)를 완전한 흰색으로, 크고 선명하게 강제 지정 */
     div[role="radiogroup"] label p {
         color: #ffffff !important; 
         font-size: 16px !important; 
         font-weight: bold !important;
-        letter-spacing: -0.5px !important; /* 자간을 살짝 좁혀서 가독성 향상 */
+        letter-spacing: -0.5px !important;
     }
 
     /* ==========================================
-       [PC 전용 디자인] (화면이 넓을 때)
+       [PC 전용 디자인]
        ========================================== */
     @media (min-width: 769px) {
         .neon-title {
@@ -143,18 +139,11 @@ st.markdown("""
         }
         .sub-title { color: #e2e8f0; font-size: 20px; margin-bottom: 40px; font-weight: 500; text-align: center; }
         .chat-user span, .chat-ai span { font-size: 16px; padding: 15px 20px; }
-        
-        /* PC 라디오 버튼: 가로로 넓게 한 줄 배치 */
-        div[role="radiogroup"] {
-            display: flex !important;
-            flex-direction: row !important;
-            justify-content: space-between !important;
-            flex-wrap: nowrap !important;
-        }
+        div[role="radiogroup"] { display: flex !important; flex-direction: row !important; justify-content: space-between !important; flex-wrap: nowrap !important; }
     }
 
     /* ==========================================
-       [모바일 전용 디자인] (화면이 좁을 때)
+       [모바일 전용 디자인]
        ========================================== */
     @media (max-width: 768px) {
         .neon-title { font-size: 38px !important; margin-top: 10px; text-shadow: 0 0 10px #c084fc, 0 0 20px #c084fc; }
@@ -163,19 +152,13 @@ st.markdown("""
         .stTabs [data-baseweb="tab"] { font-size: 13px; padding: 6px 10px; }
         .chat-user span, .chat-ai span { font-size: 14px; padding: 10px 15px; }
         div[data-testid="stButton"] > button { font-size: 14px !important; padding: 8px 15px !important; }
-        
-        /* 모바일 라디오 버튼: 세로로 보기 좋게 배치 (터치 최적화) */
-        div[role="radiogroup"] {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 15px !important;
-        }
+        div[role="radiogroup"] { display: flex !important; flex-direction: column !important; gap: 15px !important; }
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# [세션 상태 관리]
+# [세션 상태 및 자동 로그인 관리]
 # ==========================================
 if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 if 'user_id' not in st.session_state: st.session_state['user_id'] = ""
@@ -183,6 +166,17 @@ if 'id_checked' not in st.session_state: st.session_state['id_checked'] = False
 if 'valid_id' not in st.session_state: st.session_state['valid_id'] = ""
 if 'chat_session' not in st.session_state: st.session_state['chat_session'] = [] 
 if 'greeting_msg' not in st.session_state: st.session_state['greeting_msg'] = random.choice(GREETINGS)
+
+# URL 파라미터를 통한 자동 로그인 체크
+if not st.session_state['logged_in']:
+    saved_user = st.query_params.get("auto_user")
+    if saved_user:
+        c.execute("SELECT * FROM users WHERE user_id=?", (saved_user,))
+        if c.fetchone():
+            st.session_state['logged_in'] = True
+            st.session_state['user_id'] = saved_user
+            st.session_state['chat_session'] = []
+            st.session_state['greeting_msg'] = random.choice(GREETINGS)
 
 # ==========================================
 # [화면 구성] 1. 로그인 / 회원가입 화면
@@ -199,7 +193,6 @@ if not st.session_state['logged_in']:
     </div>
     """, unsafe_allow_html=True)
     
-    # PC에서는 가운데로 모이고, 모바일에서는 꽉 차게 만드는 마법의 비율 [1, 2, 1]
     col_empty1, col_login, col_empty2 = st.columns([1, 2, 1])
     
     with col_login:
@@ -207,6 +200,9 @@ if not st.session_state['logged_in']:
         with auth_tab1:
             login_id = st.text_input("아이디를 입력하세요", key="login_id")
             login_pw = st.text_input("비밀번호를 입력하세요", type="password", key="login_pw")
+            
+            auto_login = st.checkbox("☑️ 자동 로그인 (로그인 상태 유지)")
+            
             st.write("") 
             if st.button("로그인 하기", use_container_width=True):
                 c.execute("SELECT * FROM users WHERE user_id=? AND password=?", (login_id, login_pw))
@@ -215,6 +211,10 @@ if not st.session_state['logged_in']:
                     st.session_state['user_id'] = login_id
                     st.session_state['chat_session'] = [] 
                     st.session_state['greeting_msg'] = random.choice(GREETINGS) 
+                    
+                    if auto_login:
+                        st.query_params["auto_user"] = login_id
+                        
                     st.rerun()
                 else:
                     st.error("아이디 또는 비밀번호가 일치하지 않습니다.")
@@ -295,6 +295,7 @@ else:
             st.session_state['logged_in'] = False
             st.session_state['user_id'] = ""
             st.session_state['chat_session'] = []
+            st.query_params.clear()
             st.rerun()
             
     st.write("")
@@ -307,7 +308,6 @@ else:
     with tab1:
         st.markdown("### 💬 마음 상담 채팅")
         
-        # 공식적인 비밀보장 서약 안내문
         st.markdown("""
         <div style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
             <div style="color: #34d399; font-weight: 900; font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
@@ -347,7 +347,7 @@ else:
                     with st.spinner("AI 심리상담사가 답변을 준비하고 있습니다..."):
                         try:
                             messages = [
-                                {"role": "system", "content": "당신은 직장인들의 마음을 치유해주는 따뜻하고 공감 능력이 뛰어난 전문 심리 상담사입니다. 내담자의 질문에 깊이 공감해주고 마음이 편안해질 수 있는 따뜻한 위로와 조언을 3~4문단으로 작성해주세요. 말투는 '~해요', '~습니다' 등 다정하고 존중하는 어투를 사용하세요. 한국어로만 대답하세요."}
+                                {"role": "system", "content": "당신은 포스코 퓨처엠 직장인들의 마음을 치유해주는 따뜻하고 공감 능력이 뛰어난 전문 심리 상담사입니다. **[가장 중요한 원칙]: 반드시 100% 한국어로만 답변하세요. 한자(漢字), 러시아어, 영어 등 외국어는 절대 사용하지 마세요.** 내담자의 질문에 깊이 공감해주고 마음이 편안해질 수 있는 따뜻한 위로와 조언을 3~4문단으로 작성해주세요. 말투는 '~해요', '~습니다' 등 다정하고 존중하는 어투를 사용하세요."}
                             ]
                             for m in st.session_state['chat_session']:
                                 messages.append({"role": "user", "content": m['worry']})
@@ -360,10 +360,11 @@ else:
                                 "Authorization": f"Bearer {GROQ_API_KEY}",
                                 "Content-Type": "application/json"
                             }
+                            
                             data = {
                                 "model": "llama-3.3-70b-versatile",
                                 "messages": messages,
-                                "temperature": 0.7
+                                "temperature": 0.5
                             }
                             
                             response = requests.post(url, headers=headers, json=data)
@@ -440,7 +441,6 @@ else:
             "19. 직장 내 괴롭힘이나 부당한 대우를 경험한 적이 있다.", "20. 현재의 직무가 내 적성이나 경력 개발에 도움이 되지 않는다."
         ]
         
-        # [수정됨] 군더더기 텍스트를 빼고 아주 깔끔하게 원상복구 했습니다.
         options = ["전혀 그렇지 않다", "그렇지 않다", "보통이다", "그렇다", "매우 그렇다"]
         
         with st.form("stress_test_form"):
@@ -648,7 +648,12 @@ else:
             const squishSound = 'https://assets.mixkit.co/active_storage/sfx/2772/2772-preview.mp3'; 
             const eatSound = 'https://assets.mixkit.co/active_storage/sfx/2902/2902-preview.mp3';
 
-            function playSound(url) {{ let audio = new Audio(url); audio.volume = 1.0; audio.play().catch(e => console.log("Audio blocked")); }}
+            // [수정됨] 볼륨 조절이 가능하도록 함수 변경
+            function playSound(url, vol) {{ 
+                let audio = new Audio(url); 
+                audio.volume = vol || 1.0; 
+                audio.play().catch(e => console.log("Audio blocked")); 
+            }}
 
             const crack1 = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M30,0 L45,30 L35,50 L60,80 L50,100" stroke="rgba(255,255,255,0.9)" stroke-width="3" fill="none"/></svg>')`;
             const crack2 = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M30,0 L45,30 L35,50 L60,80 L50,100 M100,30 L70,45 L80,70 L40,90" stroke="rgba(255,255,255,1)" stroke-width="4" fill="none"/></svg>')`;
@@ -665,13 +670,13 @@ else:
                 el.setAttribute('data-hits', hits);
                 
                 if(hits === 1) {{
-                    playSound(crackSound);
+                    playSound(crackSound, 0.5); // 얼음 금가는 소리 볼륨 50%
                     el.style.backgroundImage = crack1 + ", linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(165,243,252,0.6) 100%)";
                 }} else if(hits === 2) {{
-                    playSound(crackSound);
+                    playSound(crackSound, 0.5);
                     el.style.backgroundImage = crack2 + ", linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(165,243,252,0.6) 100%)";
                 }} else {{
-                    playSound(smashSound);
+                    playSound(smashSound, 0.6); // 얼음 깨지는 소리 볼륨 60%
                     el.classList.add('shattered');
                     setTimeout(() => {{ el.style.display = 'none'; }}, 1000);
                 }}
@@ -729,7 +734,9 @@ else:
 
                 ant.addEventListener('pointerdown', function() {{
                     if(!gameActive) return;
-                    playSound(squishSound);
+                    
+                    // [수정됨] 개미 터지는 소리 볼륨을 25%로 대폭 낮춤 (타격감은 유지)
+                    playSound(squishSound, 0.25);
                     
                     score += 10;
                     if(score % 100 === 0) {{ 
@@ -761,7 +768,7 @@ else:
                     let distance = Math.sqrt(dx*dx + dy*dy);
                     
                     if(distance < 40) {{ 
-                        playSound(eatSound);
+                        playSound(eatSound, 0.4); // 식빵 먹히는 소리 볼륨 40%
                         breadScale -= 0.15; 
                         if(breadScale <= 0.2) {{
                             breadScale = 0;
