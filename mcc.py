@@ -16,7 +16,7 @@ st.set_page_config(page_title="스마트 마음 상담 센터", page_icon="🌙"
 # ==========================================
 GEMINI_API_KEY = "AIzaSyBOagoX1FvOaIVdyA2xeTqzERYGuunLR_Y"
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-pro') 
+model = genai.GenerativeModel('gemini-1.5-flash') 
 
 # ==========================================
 # [데이터베이스 설정] SQLite3
