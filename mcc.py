@@ -11,7 +11,7 @@ import google.generativeai as genai
 st.set_page_config(page_title="스마트 마음 상담 센터", page_icon="🌙", layout="wide")
 
 # ==========================================
-# [Gemini AI 설정] 제공해주신 새 API 키 적용
+# [Gemini AI 설정] 
 # ==========================================
 GEMINI_API_KEY = "AIzaSyBOagoX1FvOaIVdyA2xeTqzERYGuunLR_Y"
 genai.configure(api_key=GEMINI_API_KEY)
@@ -87,13 +87,8 @@ st.markdown("""
     .p1 { transform: rotate(-4deg); background: #fef08a; }
     .p2 { transform: rotate(3deg); background: #bbf7d0; }
     .p3 { transform: rotate(-3deg); background: #fbcfe8; }
-
-    .auth-box {
-        background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.2); 
-        border-radius: 20px; padding: 40px 30px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6); width: 100%; max-width: 500px; margin: 0 auto;
-    }
     
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
+    .stTabs [data-baseweb="tab-list"] { gap: 10px; justify-content: center; }
     .stTabs [data-baseweb="tab"] { background-color: rgba(255,255,255,0.05); border-radius: 8px 8px 0 0; padding: 10px 20px; color: #cbd5e1; font-size: 18px; }
     .stTabs [aria-selected="true"] { background-color: rgba(192, 132, 252, 0.2); color: #fbcfe8 !important; border-bottom: 3px solid #c084fc; font-weight: bold; }
 
@@ -104,11 +99,25 @@ st.markdown("""
     .record-worry { color: #ffffff; font-size: 18px; font-weight: 700; margin-bottom: 15px; line-height: 1.6; }
     .record-answer { color: #e2e8f0; font-size: 17px; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 10px; line-height: 1.7; }
     
-    /* 채팅 말풍선 스타일 */
     .chat-user { text-align: right; margin-bottom: 15px; }
     .chat-user span { background-color: #334155; padding: 12px 20px; border-radius: 20px 20px 0 20px; display: inline-block; font-size: 17px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     .chat-ai { text-align: left; margin-bottom: 25px; }
     .chat-ai span { background-color: rgba(192, 132, 252, 0.15); border: 1px solid #c084fc; padding: 15px 20px; border-radius: 20px 20px 20px 0; display: inline-block; font-size: 17px; line-height: 1.7; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+    /* 사내상담센터 표 스타일 */
+    .counseling-table {
+        width: 100%; max-width: 900px; margin: 30px auto; border-collapse: collapse;
+        background-color: rgba(255, 255, 255, 0.03); color: #e2e8f0; font-size: 15px;
+        text-align: center; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .counseling-table th {
+        background: linear-gradient(45deg, #3b82f6, #8b5cf6); color: #ffffff;
+        padding: 15px; font-weight: 900; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 16px;
+    }
+    .counseling-table td {
+        padding: 15px; border: 1px solid rgba(255, 255, 255, 0.1); vertical-align: middle; line-height: 1.5;
+    }
+    .counseling-table tr:hover { background-color: rgba(255, 255, 255, 0.08); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -119,7 +128,7 @@ if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 if 'user_id' not in st.session_state: st.session_state['user_id'] = ""
 if 'id_checked' not in st.session_state: st.session_state['id_checked'] = False
 if 'valid_id' not in st.session_state: st.session_state['valid_id'] = ""
-if 'chat_session' not in st.session_state: st.session_state['chat_session'] = [] # 현재 채팅 세션
+if 'chat_session' not in st.session_state: st.session_state['chat_session'] = [] 
 
 # ==========================================
 # [화면 구성] 1. 로그인 / 회원가입 화면
@@ -138,7 +147,7 @@ if not st.session_state['logged_in']:
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("<div class='auth-box'>", unsafe_allow_html=True)
+        # 불필요한 둥근 원(auth-box) 렌더링 오류 제거 완료
         auth_tab1, auth_tab2 = st.tabs(["🔑 로그인", "📝 회원가입"])
         
         with auth_tab1:
@@ -150,7 +159,7 @@ if not st.session_state['logged_in']:
                 if c.fetchone():
                     st.session_state['logged_in'] = True
                     st.session_state['user_id'] = login_id
-                    st.session_state['chat_session'] = [] # 로그인 시 채팅 초기화
+                    st.session_state['chat_session'] = [] 
                     st.rerun()
                 else:
                     st.error("아이디 또는 비밀번호가 일치하지 않습니다.")
@@ -182,8 +191,6 @@ if not st.session_state['logged_in']:
                     conn.commit()
                     st.success("회원가입이 완료되었습니다! 로그인 탭에서 로그인해주세요.")
                     st.session_state['id_checked'] = False
-        
-        st.markdown("</div>", unsafe_allow_html=True)
 
 # ==========================================
 # [화면 구성] 2. 메인 서비스 화면
@@ -204,18 +211,16 @@ else:
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["💬 AI 마음 상담", "📚 나의 기록", "📊 스트레스 분석", "🌙 수면 사운드", "🎮 스트레스 타파", "📅 D-day 관리"])
 
     # ------------------------------------------
-    # [탭 1] AI 마음 상담 (연속 채팅 & 초기화 기능)
+    # [탭 1] AI 마음 상담
     # ------------------------------------------
     with tab1:
         col_t1, col_t2 = st.columns([4, 1])
-        with col_t1:
-            st.markdown("### 💬 마음 상담 채팅")
+        with col_t1: st.markdown("### 💬 마음 상담 채팅")
         with col_t2:
             if st.button("🔄 새 상담 시작 (초기화)", use_container_width=True):
                 st.session_state['chat_session'] = []
                 st.rerun()
 
-        # 기존 대화 내용 출력
         if not st.session_state['chat_session']:
             st.info("아래 입력창에 고민을 적어주시면 상담이 시작됩니다. 추가 질문도 언제든 가능해요!")
         else:
@@ -223,18 +228,15 @@ else:
                 st.markdown(f"<div class='chat-user'><span>{msg['worry']}</span></div>", unsafe_allow_html=True)
                 st.markdown(f"<div class='chat-ai'><span>{msg['answer']}</span></div>", unsafe_allow_html=True)
 
-        # 입력 폼 (전송 시 입력창 자동 비움)
         with st.form("chat_form", clear_on_submit=True):
             worry_input = st.text_area("고민이나 추가 질문을 자유롭게 적어주세요.", height=100)
             submitted = st.form_submit_button("✨ AI 상담사에게 전송 ✨", use_container_width=True)
             
             if submitted:
-                if worry_input.strip() == "":
-                    st.warning("내용을 조금이라도 적어주세요.")
+                if worry_input.strip() == "": st.warning("내용을 조금이라도 적어주세요.")
                 else:
                     with st.spinner("AI 심리상담사가 답변을 준비하고 있습니다..."):
                         try:
-                            # 이전 대화 문맥 구성 (AI가 기억하도록)
                             context = ""
                             for m in st.session_state['chat_session']:
                                 context += f"내담자: {m['worry']}\n상담사: {m['answer']}\n\n"
@@ -252,44 +254,38 @@ else:
                             response = model.generate_content(prompt)
                             answer = response.text
                             
-                            # DB 저장
                             now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                             c.execute("INSERT INTO counseling_records (user_id, date, worry, answer) VALUES (?, ?, ?, ?)", 
                                       (st.session_state['user_id'], now, worry_input, answer))
                             conn.commit()
                             
-                            # 세션 업데이트 및 화면 새로고침
                             st.session_state['chat_session'].append({'worry': worry_input, 'answer': answer})
                             st.rerun()
                         except Exception as e:
                             st.error(f"⚠️ AI 응답 중 오류가 발생했습니다. (상세: {e})")
 
     # ------------------------------------------
-    # [탭 2] 나의 마음 기록 (개별 삭제 & 전체 삭제)
+    # [탭 2] 나의 마음 기록
     # ------------------------------------------
     with tab2:
         col_r1, col_r2 = st.columns([4, 1])
-        with col_r1:
-            st.markdown("### 🕰️ 내가 걸어온 마음의 발자취")
+        with col_r1: st.markdown("### 🕰️ 내가 걸어온 마음의 발자취")
         with col_r2:
             if st.button("🗑️ 전체 삭제", use_container_width=True):
                 c.execute("DELETE FROM counseling_records WHERE user_id=?", (st.session_state['user_id'],))
                 conn.commit()
-                st.session_state['chat_session'] = [] # 채팅 세션도 비움
+                st.session_state['chat_session'] = [] 
                 st.success("모든 기록이 삭제되었습니다.")
                 time.sleep(1)
                 st.rerun()
                 
-        # DB에서 id 포함해서 가져오기
         c.execute("SELECT id, date, worry, answer FROM counseling_records WHERE user_id=? ORDER BY id DESC", (st.session_state['user_id'],))
         records = c.fetchall()
         
-        if not records:
-            st.info("아직 상담 기록이 없습니다. 첫 번째 고민을 남겨보세요!")
+        if not records: st.info("아직 상담 기록이 없습니다. 첫 번째 고민을 남겨보세요!")
         else:
             for record in records:
                 r_id, date, worry, answer = record
-                
                 col_card, col_del = st.columns([6, 1])
                 with col_card:
                     st.markdown(f"""
@@ -300,7 +296,7 @@ else:
                     </div>
                     """, unsafe_allow_html=True)
                 with col_del:
-                    st.write("") # 버튼 위치 정렬용
+                    st.write("") 
                     if st.button("❌ 삭제", key=f"del_rec_{r_id}", use_container_width=True):
                         c.execute("DELETE FROM counseling_records WHERE id=?", (r_id,))
                         conn.commit()
@@ -330,12 +326,7 @@ else:
     # ------------------------------------------
     with tab4:
         st.markdown("### 🌙 깊은 수면과 휴식을 위한 사운드")
-        sound_choice = st.radio(
-            "듣고 싶은 테마를 선택하세요:",
-            ["🔥 장작 타는 소리", "🌧️ 차분해지는 빗소리", "🎵 432Hz 심신 안정 주파수", "🌊 잔잔한 파도 소리"],
-            horizontal=True
-        )
-        
+        sound_choice = st.radio("듣고 싶은 테마를 선택하세요:", ["🔥 장작 타는 소리", "🌧️ 차분해지는 빗소리", "🎵 432Hz 심신 안정 주파수", "🌊 잔잔한 파도 소리"], horizontal=True)
         st.markdown("<hr style='border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
         
         if "장작" in sound_choice: st.video("https://www.youtube.com/watch?v=peB0qS5A-jY") 
@@ -468,13 +459,72 @@ else:
                         st.rerun()
 
 # ==========================================
-# [푸터] 면책 조항
+# [푸터] 사내상담센터 안내 및 면책 조항
 # ==========================================
 st.markdown("""
 <hr style="border-color: rgba(255,255,255,0.1); margin-top: 50px;">
-<div style="text-align: center; color: #94a3b8; font-size: 14px; line-height: 1.6;">
+<div style="text-align: center; color: #94a3b8; font-size: 15px; line-height: 1.8;">
     ⚠️ <b>본 '마음 상담소'의 답변은 AI에 의해 생성된 위로 메시지이며, 전문적인 의학적 진단이나 심리 치료를 대체할 수 없습니다.</b><br>
-    심각한 우울감이나 스트레스가 지속될 경우, 사내 심리상담센터(EAP) 또는 전문 의료기관의 도움을 받으시길 권장합니다.<br>
-    © Smart Mind Care Center. All rights reserved.
+    심각한 우울감이나 스트레스가 지속될 경우, <b>사내 심리상담센터(심즈업 심리상담 070-4192-7762)</b> 또는 전문 의료기관의 도움을 받으시길 권장합니다.
+</div>
+
+<!-- 사내상담센터 안내 표 -->
+<table class="counseling-table">
+    <thead>
+        <tr>
+            <th>지역</th>
+            <th>근무지</th>
+            <th>장소</th>
+            <th>상담사명</th>
+            <th>운영시간</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td rowspan="4" style="font-weight: bold; color: #fbcfe8;">포항</td>
+            <td>포항본사</td>
+            <td rowspan="2">늘푸른솔커뮤니티센터<br>1층 회의실</td>
+            <td rowspan="2">윤영임</td>
+            <td rowspan="2">매주 화, 격주 목<br>09:00~18:00</td>
+        </tr>
+        <tr>
+            <td>포항사업실</td>
+        </tr>
+        <tr>
+            <td>포항양극재</td>
+            <td>신사무동 4층 상담실</td>
+            <td rowspan="2">김진아</td>
+            <td>매주 월<br>09:00~18:00</td>
+        </tr>
+        <tr>
+            <td>포항음극재</td>
+            <td>사무동 1층 보건실</td>
+            <td>격주 목<br>09:00~18:00</td>
+        </tr>
+        <tr>
+            <td rowspan="2" style="font-weight: bold; color: #fbcfe8;">광양</td>
+            <td>광양사업실</td>
+            <td>태인동 사무소<br>3층 마음쉼터</td>
+            <td>박정숙</td>
+            <td>매주 수<br>09:00~18:00</td>
+        </tr>
+        <tr>
+            <td>광양양극재</td>
+            <td>창의동 2층<br>건강관리실 內 고충상담실</td>
+            <td>이혜주</td>
+            <td>매주 화<br>09:00~18:00</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold; color: #fbcfe8;">세종</td>
+            <td>세종음극재</td>
+            <td>2공장 복지동<br>2층 혼창통</td>
+            <td>김유진</td>
+            <td>매주 화<br>10:00~19:00</td>
+        </tr>
+    </tbody>
+</table>
+
+<div style="text-align: center; color: #64748b; font-size: 13px; margin-top: 20px;">
+    © POSCO FUTURE M Smart Mind Care Center. All rights reserved.
 </div>
 """, unsafe_allow_html=True)
