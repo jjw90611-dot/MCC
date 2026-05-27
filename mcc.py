@@ -6,7 +6,7 @@ import time
 import random
 import requests
 import json
-import re  # [추가됨] 한자 필터링을 위한 정규표현식 라이브러리
+import re  # 외국어 필터링을 위한 정규표현식 라이브러리
 
 # ==========================================
 # [초기 설정] 페이지 세팅 (PC에서 너무 퍼지지 않게 centered 적용)
@@ -347,9 +347,8 @@ else:
                 else:
                     with st.spinner("AI 심리상담사가 답변을 준비하고 있습니다..."):
                         try:
-                            # [수정됨] 프롬프트 초강화: 한자 및 괄호 병기 절대 금지
                             messages = [
-                                {"role": "system", "content": "당신은 포스코 퓨처엠 직장인들의 마음을 치유해주는 따뜻하고 공감 능력이 뛰어난 전문 심리 상담사입니다. **[가장 중요한 원칙]: 반드시 100% 순수 한글로만 답변하세요. 한자(漢字, Chinese characters), 영어 등 외국어는 단 한 글자도 절대 사용하지 마세요. 단어 뒤에 괄호를 치고 한자를 적는 행위도 절대 금지합니다.** 내담자의 질문에 깊이 공감해주고 마음이 편안해질 수 있는 따뜻한 위로와 조언을 3~4문단으로 작성해주세요. 말투는 '~해요', '~습니다' 등 다정하고 존중하는 어투를 사용하세요."}
+                                {"role": "system", "content": "당신은 포스코 퓨처엠 직장인들의 마음을 치유해주는 따뜻하고 공감 능력이 뛰어난 전문 심리 상담사입니다. **[절대 규칙]: 오직 '한국어(한글)'만 사용하세요. 러시아어(키릴 문자), 그리스어, 한자, 일본어 등은 시스템 오류를 발생시키므로 절대 출력해서는 안 됩니다.** 내담자의 질문에 깊이 공감해주고 마음이 편안해질 수 있는 따뜻한 위로와 조언을 3~4문단으로 작성해주세요. 말투는 '~해요', '~습니다' 등 다정하고 존중하는 어투를 사용하세요."}
                             ]
                             for m in st.session_state['chat_session']:
                                 messages.append({"role": "user", "content": m['worry']})
@@ -366,7 +365,7 @@ else:
                             data = {
                                 "model": "llama-3.3-70b-versatile",
                                 "messages": messages,
-                                "temperature": 0.5
+                                "temperature": 0.1  # [수정됨] 창의성을 최저치로 낮춰 할루시네이션(외국어 튀어나옴) 원천 차단
                             }
                             
                             response = requests.post(url, headers=headers, json=data)
@@ -375,14 +374,14 @@ else:
                                 answer = response.json()['choices'][0]['message']['content']
                                 
                                 # ==========================================
-                                # [추가됨] 철통 방어: 정규표현식으로 한자 원천 삭제
+                                # [추가됨] 철통 방어: 정규표현식으로 모든 외국어 유니코드 강제 삭제
                                 # ==========================================
-                                # 1. 괄호 안에 한자가 있는 경우 괄호째로 삭제 (예: (心理) -> 삭제)
-                                answer = re.sub(r'\([一-龥\s,]+\)', '', answer)
-                                # 2. 혹시라도 남아있는 모든 한자 삭제
-                                answer = re.sub(r'[一-龥]', '', answer)
-                                # 3. 한자가 지워지고 남은 빈 괄호 찌꺼기 삭제
-                                answer = answer.replace('()', '').replace(' ( )', '').strip()
+                                # 한자, 러시아어(키릴), 그리스어, 일본어 유니코드 대역을 모두 찾아 삭제합니다.
+                                foreign_pattern = re.compile(r'[\u4e00-\u9fff\u3400-\u4dbf\u0400-\u04ff\u0500-\u052f\u0370-\u03ff\u1f00-\u1fff\u3040-\u309f\u30a0-\u30ff]')
+                                answer = foreign_pattern.sub('', answer)
+                                
+                                # 외국어가 지워지면서 남은 빈 괄호 찌꺼기 삭제
+                                answer = answer.replace('()', '').replace(' ( )', '').replace('[]', '').strip()
                                 
                                 now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                                 c.execute("INSERT INTO counseling_records (user_id, date, worry, answer) VALUES (?, ?, ?, ?)", 
@@ -500,7 +499,6 @@ else:
         )
         st.markdown("<hr style='border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
         
-        # [수정됨] 요청하신 유튜브 링크 적용
         if "장작" in sound_choice: st.video("https://youtu.be/Bb0d96fC7bc?si=NDPL1dN7bmsd6DhT") 
         elif "빗소리" in sound_choice: st.video("https://www.youtube.com/watch?v=mPZkdNFkNps")
         elif "주파수" in sound_choice: st.video("https://www.youtube.com/watch?v=1ZYbU82GVz4") 
