@@ -103,15 +103,24 @@ st.markdown("""
     .chat-ai { text-align: left; margin-bottom: 25px; }
     .chat-ai span { background-color: rgba(192, 132, 252, 0.15); border: 1px solid #c084fc; padding: 12px 15px; border-radius: 20px 20px 20px 0; display: inline-block; font-size: 15px; line-height: 1.6; box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-width: 90%; word-break: break-word; }
 
-    /* 표 공통 */
-    .table-container { display: flex; justify-content: center; overflow-x: auto; padding: 10px; margin-bottom: 30px; }
+    /* 표 공통 (모바일 스크롤 지원) */
+    .table-container { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 30px; }
     .counseling-table {
-        width: 100%; max-width: 800px; min-width: 500px; margin: 0 auto; border-collapse: collapse;
+        width: 100%; min-width: 600px; margin: 0 auto; border-collapse: collapse;
         background-color: rgba(255, 255, 255, 0.03); color: #e2e8f0; font-size: 15px;
         text-align: center; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
     .counseling-table th { background: linear-gradient(45deg, #3b82f6, #8b5cf6); color: #ffffff; padding: 12px; font-weight: 900; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 14px; white-space: nowrap; }
     .counseling-table td { padding: 12px; border: 1px solid rgba(255, 255, 255, 0.1); vertical-align: middle; line-height: 1.4; }
+
+    /* 라디오 버튼 (스트레스 진단) 공통 디자인 - 다크 테마에 맞춤 */
+    div[role="radiogroup"] {
+        background-color: rgba(30, 41, 59, 0.6) !important;
+        padding: 15px 20px !important;
+        border-radius: 10px !important;
+        border: 1px solid rgba(192, 132, 252, 0.4) !important;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
+    }
 
     /* ==========================================
        [PC 전용 디자인] (화면이 넓을 때)
@@ -124,6 +133,14 @@ st.markdown("""
         }
         .sub-title { color: #e2e8f0; font-size: 20px; margin-bottom: 40px; font-weight: 500; text-align: center; }
         .chat-user span, .chat-ai span { font-size: 16px; padding: 15px 20px; }
+        
+        /* PC 라디오 버튼: 가로로 넓게 한 줄 배치 */
+        div[role="radiogroup"] {
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            flex-wrap: nowrap !important;
+        }
     }
 
     /* ==========================================
@@ -136,6 +153,13 @@ st.markdown("""
         .stTabs [data-baseweb="tab"] { font-size: 13px; padding: 6px 10px; }
         .chat-user span, .chat-ai span { font-size: 14px; padding: 10px 15px; }
         div[data-testid="stButton"] > button { font-size: 14px !important; padding: 8px 15px !important; }
+        
+        /* 모바일 라디오 버튼: 세로로 보기 좋게 배치 (터치 최적화) */
+        div[role="radiogroup"] {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 15px !important;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -272,6 +296,20 @@ else:
     # ------------------------------------------
     with tab1:
         st.markdown("### 💬 마음 상담 채팅")
+        
+        # [추가된 부분] 공식적인 비밀보장 서약 안내문
+        st.markdown("""
+        <div style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+            <div style="color: #34d399; font-weight: 900; font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
+                🔒 상담 비밀보장 서약 (Confidentiality Agreement)
+            </div>
+            <div style="color: #e2e8f0; font-size: 13px; line-height: 1.6; word-break: keep-all;">
+                본 AI 마음 상담소에서 진행되는 모든 상담 내용과 기록은 철저히 보호됩니다.<br>
+                내담자 본인 외에는 <b>회사(인사팀, 부서장 등)를 포함한 그 누구도 절대 열람할 수 없으며</b>, 오직 내담자의 마음 건강 회복을 위해서만 사용됩니다. 안심하고 편안하게 귀하의 이야기를 들려주세요.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
         if st.button("🔄 새 상담 시작 (초기화)", use_container_width=True):
             st.session_state['chat_session'] = []
             st.session_state['greeting_msg'] = random.choice(GREETINGS) 
@@ -392,7 +430,7 @@ else:
             "19. 직장 내 괴롭힘이나 부당한 대우를 경험한 적이 있다.", "20. 현재의 직무가 내 적성이나 경력 개발에 도움이 되지 않는다."
         ]
         
-        options = ["전혀 그렇지 않다 (1점)", "그렇지 않다 (2점)", "보통이다 (3점)", "그렇다 (4점)", "매우 그렇다 (5점)"]
+        options = ["전혀 그렇지 않다 (1점)", "그렇지 않다 (2점)", "보통이다 (3점)", "그렇다 (4점)", "매 창 매우 그렇다 (5점)"]
         
         with st.form("stress_test_form"):
             scores = []
@@ -439,7 +477,7 @@ else:
         )
         st.markdown("<hr style='border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
         
-        if "장작" in sound_choice: st.video("https://www.youtube.com/watch?v=3_cE2_Mh2L0") 
+        if "장작" in sound_choice: st.video("https://youtu.be/Bb0d96fC7bc?si=rFoTYw6Y0ILetM2c") 
         elif "빗소리" in sound_choice: st.video("https://www.youtube.com/watch?v=mPZkdNFkNps")
         elif "주파수" in sound_choice: st.video("https://www.youtube.com/watch?v=1ZYbU82GVz4") 
         elif "파도" in sound_choice: st.video("https://www.youtube.com/watch?v=bn9F19Hi1Lk")
