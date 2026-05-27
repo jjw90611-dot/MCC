@@ -23,7 +23,7 @@ except:
 
 genai.configure(api_key=GEMINI_API_KEY)
 # 구글에서 무료로 제공하는 최신 빠르고 가벼운 모델입니다.
-model = genai.GenerativeModel('gemini-pro') 
+model = genai.GenerativeModel('gemini-1.5-flash') 
 
 # ==========================================
 # [데이터베이스 설정] SQLite3
