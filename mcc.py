@@ -18,14 +18,14 @@ genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-pro') 
 
 # ==========================================
-# [데이터베이스 설정] SQLite3 (게임 랭킹 테이블 추가)
+# [데이터베이스 설정] SQLite3
 # ==========================================
 conn = sqlite3.connect('mind_care_v2.db', check_same_thread=False)
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS counseling_records (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, date TEXT, worry TEXT, answer TEXT)''')
 c.execute('''CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY, password TEXT)''')
 c.execute('''CREATE TABLE IF NOT EXISTS dday_records (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, title TEXT, target_date TEXT)''')
-c.execute('''CREATE TABLE IF NOT EXISTS game_scores (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, score INTEGER, date TEXT)''') # 랭킹용 DB
+c.execute('''CREATE TABLE IF NOT EXISTS game_scores (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, score INTEGER, date TEXT)''')
 conn.commit()
 
 # ==========================================
@@ -248,7 +248,11 @@ else:
                 st.rerun()
 
         if not st.session_state['chat_session']:
-            st.info("아래 입력창에 고민을 적어주시면 상담이 시작됩니다. 추가 질문도 언제든 가능해요!")
+            st.markdown("""
+            <div style="background-color: rgba(255,255,255,0.1); border-left: 5px solid #c084fc; padding: 15px; border-radius: 10px; color: #ffffff; font-size: 18px; font-weight: bold; margin-bottom: 20px;">
+                💡 아래 입력창에 고민을 적어주시면 상담이 시작됩니다. 추가 질문도 언제든 가능해요!
+            </div>
+            """, unsafe_allow_html=True)
         else:
             for msg in st.session_state['chat_session']:
                 st.markdown(f"<div class='chat-user'><span>{msg['worry']}</span></div>", unsafe_allow_html=True)
@@ -385,7 +389,7 @@ else:
                 """, unsafe_allow_html=True)
 
     # ------------------------------------------
-    # [탭 4] 수면 & 힐링 사운드 (피아노 링크 교체 완료)
+    # [탭 4] 수면 & 힐링 사운드
     # ------------------------------------------
     with tab4:
         st.markdown("### 🌙 깊은 수면과 휴식을 위한 사운드")
@@ -396,21 +400,20 @@ else:
         )
         st.markdown("<hr style='border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
         
-        if "장작" in sound_choice: st.video("https://www.youtube.com/watch?v=L_LUpnjgPso") 
+        if "장작" in sound_choice: st.video("https://www.youtube.com/watch?v=3_cE2_Mh2L0") 
         elif "빗소리" in sound_choice: st.video("https://www.youtube.com/watch?v=mPZkdNFkNps")
-        elif "주파수" in sound_choice: st.video("https://www.youtube.com/watch?v=77ZozI0rw7w") 
+        elif "주파수" in sound_choice: st.video("https://www.youtube.com/watch?v=1ZYbU82GVz4") 
         elif "파도" in sound_choice: st.video("https://www.youtube.com/watch?v=bn9F19Hi1Lk")
         elif "새소리" in sound_choice: st.video("https://www.youtube.com/watch?v=eKFTSSKCzWA")
-        elif "피아노" in sound_choice: st.video("https://www.youtube.com/watch?v=cI4ryatVkKw") # 검증된 힐링 피아노 링크로 교체
+        elif "피아노" in sound_choice: st.video("https://www.youtube.com/watch?v=WJ3-F02-F_Y") 
         elif "카페" in sound_choice: st.video("https://www.youtube.com/watch?v=gaGrHUekGrc")
 
     # ------------------------------------------
-    # [탭 5] 스트레스 타파 미니게임
+    # [탭 5] 스트레스 타파 미니게임 (리얼 사운드 적용)
     # ------------------------------------------
     with tab5:
         st.markdown("### 🎮 스트레스 타파 미니게임")
         
-        # 1. 얼음 깨기 4분할 입력창
         st.markdown("#### 🧊 분노의 얼음 깨기 (얼음 속에 가두고 싶은 스트레스를 각각 적어주세요)")
         col_i1, col_i2, col_i3, col_i4 = st.columns(4)
         with col_i1: ice1 = st.text_input("첫 번째 얼음", value="월요병")
@@ -418,6 +421,17 @@ else:
         with col_i3: ice3 = st.text_input("세 번째 얼음", value="인간관계")
         with col_i4: ice4 = st.text_input("네 번째 얼음", value="야근")
         
+        auto_score = st.text_input("auto_score_input_hidden_123", key="auto_score_input")
+        auto_submit = st.button("auto_score_submit_hidden_123", key="auto_submit_btn")
+        
+        if auto_submit and auto_score.isdigit():
+            now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            c.execute("INSERT INTO game_scores (user_id, score, date) VALUES (?, ?, ?)", (st.session_state['user_id'], int(auto_score), now))
+            conn.commit()
+            st.success(f"🎉 {auto_score}점이 랭킹에 자동 등록되었습니다!")
+            time.sleep(1.5)
+            st.rerun()
+
         game_html = f"""
         <!DOCTYPE html>
         <html>
@@ -432,7 +446,6 @@ else:
             body {{ font-family: 'SeoulNamsan', sans-serif; color: white; margin: 0; padding: 10px; background: transparent; user-select: none; }}
             h4 {{ color: #c084fc; margin-bottom: 15px; font-size: 20px; font-weight: bold; text-align: center; }}
             
-            /* 얼음 깨기 스타일 */
             .ice-container {{ display: flex; justify-content: center; gap: 20px; margin-bottom: 50px; flex-wrap: wrap; }}
             .ice-block {{
                 width: 130px; height: 130px;
@@ -448,7 +461,6 @@ else:
             .shattered {{ background: transparent !important; border: none !important; box-shadow: none !important; color: transparent !important; pointer-events: none; }}
             .shattered::after {{ content: '💥'; font-size: 60px; color: white; display: block; animation: fadeOut 1s forwards; }}
             
-            /* 개미 잡기 스타일 */
             .ant-game-area {{ 
                 position: relative; width: 100%; height: 500px; 
                 background: radial-gradient(circle, #5c4033 0%, #27160a 100%); 
@@ -476,7 +488,8 @@ else:
             #hud {{ display: flex; justify-content: space-between; padding: 10px 20px; font-size: 22px; font-weight: bold; color: #fbcfe8; background: rgba(0,0,0,0.5); border-radius: 15px 15px 0 0; }}
             #gameOverScreen {{ display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; flex-direction: column; justify-content: center; align-items: center; color: white; }}
             #gameOverScreen h1 {{ color: #f87171; font-size: 50px; margin-bottom: 10px; }}
-            #gameOverScreen p {{ font-size: 30px; color: #fbcfe8; margin-bottom: 30px; }}
+            #gameOverScreen p {{ font-size: 30px; color: #fbcfe8; margin-bottom: 20px; }}
+            #autoSubmitMsg {{ font-size: 18px; color: #4ade80; margin-bottom: 30px; font-weight: bold; }}
         </style>
         </head>
         <body>
@@ -503,19 +516,39 @@ else:
             <div id="gameOverScreen">
                 <h1>GAME OVER</h1>
                 <p id="finalScoreText">최종 점수: 0</p>
-                <button class="btn" onclick="location.reload()">다시 하기</button>
-                <div style="font-size: 16px; color: #cbd5e1; margin-top: 20px;">아래 '점수 등록하기' 칸에 점수를 입력해 랭킹에 도전하세요!</div>
+                <div id="autoSubmitMsg"></div>
+                <button class="btn" onclick="location.reload()" style="margin-top: 20px;">다시 하기</button>
             </div>
         </div>
 
         <script>
-            const glassSound = 'https://assets.mixkit.co/active_storage/sfx/2685/2685-preview.mp3'; 
-            const squishSound = 'https://assets.mixkit.co/active_storage/sfx/2783/2783-preview.mp3'; 
+            let hideInterval = setInterval(() => {{
+                try {{
+                    const parentDoc = window.parent.document;
+                    let found = false;
+                    parentDoc.querySelectorAll('label').forEach(l => {{
+                        if(l.innerText.includes('auto_score_input_hidden_123')) {{
+                            l.closest('div[data-testid="stTextInput"]').style.display = 'none';
+                            found = true;
+                        }}
+                    }});
+                    parentDoc.querySelectorAll('button').forEach(b => {{
+                        if(b.innerText.includes('auto_score_submit_hidden_123')) {{
+                            b.style.display = 'none';
+                            found = true;
+                        }}
+                    }});
+                    if(found) clearInterval(hideInterval);
+                }} catch(e) {{ clearInterval(hideInterval); }}
+            }}, 100);
+
+            // 리얼한 사운드로 전면 교체 (얼음 파쇄음 & 벌레 터지는 소리)
+            const iceSound = 'https://assets.mixkit.co/active_storage/sfx/2676/2676-preview.mp3'; 
+            const squishSound = 'https://assets.mixkit.co/active_storage/sfx/2772/2772-preview.mp3'; 
             const eatSound = 'https://assets.mixkit.co/active_storage/sfx/2902/2902-preview.mp3';
 
-            function playSound(url) {{ let audio = new Audio(url); audio.volume = 0.6; audio.play().catch(e => console.log("Audio blocked")); }}
+            function playSound(url) {{ let audio = new Audio(url); audio.volume = 0.7; audio.play().catch(e => console.log("Audio blocked")); }}
 
-            // 얼음 깨기 3단 콤보
             const crack1 = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M30,0 L45,30 L35,50 L60,80 L50,100" stroke="rgba(255,255,255,0.9)" stroke-width="3" fill="none"/></svg>')`;
             const crack2 = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M30,0 L45,30 L35,50 L60,80 L50,100 M100,30 L70,45 L80,70 L40,90" stroke="rgba(255,255,255,1)" stroke-width="4" fill="none"/></svg>')`;
 
@@ -526,19 +559,18 @@ else:
                 el.setAttribute('data-hits', hits);
                 
                 if(hits === 1) {{
-                    playSound(glassSound);
+                    playSound(iceSound);
                     el.style.backgroundImage = crack1 + ", linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(165,243,252,0.6) 100%)";
                 }} else if(hits === 2) {{
-                    playSound(glassSound);
+                    playSound(iceSound);
                     el.style.backgroundImage = crack2 + ", linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(165,243,252,0.6) 100%)";
                 }} else {{
-                    playSound(glassSound);
+                    playSound(iceSound);
                     el.classList.add('shattered');
                     setTimeout(() => {{ el.style.display = 'none'; }}, 1000);
                 }}
             }}
 
-            // 개미 게임 로직 (레벨업 & 점수)
             const antContainer = document.getElementById('antContainer');
             const bread = document.getElementById('bread');
             let score = 0;
@@ -547,7 +579,7 @@ else:
             let gameActive = false;
             let spawnInterval;
             let moveIntervals = [];
-            let spawnRate = 1500; // 초기 스폰 속도 (1.5초)
+            let spawnRate = 1500; 
 
             function startGame() {{
                 document.getElementById('startBtn').style.display = 'none';
@@ -556,7 +588,6 @@ else:
                 updateHUD();
                 bread.style.transform = `translate(-50%, -50%) scale(1)`;
                 
-                // 기존 개미 제거
                 document.querySelectorAll('.ant').forEach(a => a.remove());
                 moveIntervals.forEach(clearInterval);
                 moveIntervals = [];
@@ -594,11 +625,10 @@ else:
                     if(!gameActive) return;
                     playSound(squishSound);
                     
-                    // 점수 및 레벨업 로직
                     score += 10;
                     if(score % 100 === 0) {{ 
                         level++; 
-                        spawnRate = Math.max(400, spawnRate - 200); // 레벨업 시 스폰 속도 빨라짐
+                        spawnRate = Math.max(400, spawnRate - 200); 
                     }}
                     updateHUD();
 
@@ -612,7 +642,7 @@ else:
             }}
 
             function moveAntToBread(ant) {{
-                let speed = 2 + (level * 0.5); // 레벨이 오를수록 개미 이동 속도 증가
+                let speed = 2 + (level * 0.5); 
                 
                 let mInterval = setInterval(() => {{
                     if(!gameActive || !document.body.contains(ant)) {{ clearInterval(mInterval); return; }}
@@ -626,7 +656,7 @@ else:
                     
                     if(distance < 60) {{ 
                         playSound(eatSound);
-                        breadScale -= 0.15; // 빵 갉아먹힘
+                        breadScale -= 0.15; 
                         if(breadScale <= 0.2) {{
                             breadScale = 0;
                             gameOver();
@@ -652,6 +682,41 @@ else:
                 clearTimeout(spawnInterval);
                 document.getElementById('gameOverScreen').style.display = 'flex';
                 document.getElementById('finalScoreText').innerText = `최종 점수: ${{score}}점`;
+                
+                if(score > 0) {{
+                    document.getElementById('autoSubmitMsg').innerText = "점수를 서버에 자동 등록 중입니다... ⏳";
+                    
+                    try {{
+                        const parentDoc = window.parent.document;
+                        let scoreInput = null;
+                        parentDoc.querySelectorAll('label').forEach(l => {{
+                            if(l.innerText.includes('auto_score_input_hidden_123')) {{
+                                scoreInput = l.closest('div[data-testid="stTextInput"]').querySelector('input');
+                            }}
+                        }});
+                        
+                        if(scoreInput) {{
+                            let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                            nativeInputValueSetter.call(scoreInput, score);
+                            scoreInput.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                            
+                            setTimeout(() => {{
+                                parentDoc.querySelectorAll('button').forEach(b => {{
+                                    if(b.innerText.includes('auto_score_submit_hidden_123')) {{
+                                        b.click();
+                                        document.getElementById('autoSubmitMsg').innerText = "등록 완료! 랭킹이 갱신됩니다. ✅";
+                                    }}
+                                }});
+                            }}, 500);
+                        }} else {{
+                            document.getElementById('autoSubmitMsg').innerText = "자동 등록을 지원하지 않는 환경입니다.";
+                        }}
+                    }} catch(e) {{
+                        document.getElementById('autoSubmitMsg').innerText = "자동 등록 실패 (보안 설정).";
+                    }}
+                }} else {{
+                    document.getElementById('autoSubmitMsg').innerText = "0점은 등록되지 않습니다. 다시 도전하세요!";
+                }}
             }}
         </script>
         </body>
@@ -665,42 +730,25 @@ else:
         st.markdown("<hr style='border-color: rgba(255,255,255,0.1); margin: 40px 0;'>", unsafe_allow_html=True)
         st.markdown("### 🏆 식빵 수호대 명예의 전당 (Top 5)")
         
-        col_rank, col_form = st.columns([1, 1])
+        c.execute("SELECT user_id, MAX(score) as max_score FROM game_scores GROUP BY user_id ORDER BY max_score DESC LIMIT 5")
+        rankings = c.fetchall()
         
-        with col_form:
-            st.markdown("#### ✍️ 내 점수 등록하기")
-            with st.form("score_form"):
-                my_score = st.number_input("게임 종료 후 화면에 나온 최종 점수를 입력해주세요!", min_value=0, step=10)
-                if st.form_submit_button("점수 등록하기", use_container_width=True):
-                    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-                    c.execute("INSERT INTO game_scores (user_id, score, date) VALUES (?, ?, ?)", (st.session_state['user_id'], my_score, now))
-                    conn.commit()
-                    st.success("점수가 성공적으로 등록되었습니다!")
-                    time.sleep(1)
-                    st.rerun()
-                    
-        with col_rank:
-            st.markdown("#### 👑 실시간 랭킹")
-            # 아이디별 최고 점수 기준 내림차순 정렬 (Top 5)
-            c.execute("SELECT user_id, MAX(score) as max_score FROM game_scores GROUP BY user_id ORDER BY max_score DESC LIMIT 5")
-            rankings = c.fetchall()
-            
-            if not rankings:
-                st.info("아직 등록된 랭킹이 없습니다. 첫 번째 랭커가 되어보세요!")
-            else:
-                for i, rank in enumerate(rankings):
-                    r_user, r_score = rank
-                    if i == 0: rank_class, icon = "rank-1", "🥇"
-                    elif i == 1: rank_class, icon = "rank-2", "🥈"
-                    elif i == 2: rank_class, icon = "rank-3", "🥉"
-                    else: rank_class, icon = "rank-other", f"{i+1}위"
-                    
-                    st.markdown(f"""
-                    <div class="ranking-card {rank_class}">
-                        <div>{icon} {r_user}님</div>
-                        <div>{r_score} 점</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+        if not rankings:
+            st.info("아직 등록된 랭킹이 없습니다. 첫 번째 랭커가 되어보세요!")
+        else:
+            for i, rank in enumerate(rankings):
+                r_user, r_score = rank
+                if i == 0: rank_class, icon = "rank-1", "🥇"
+                elif i == 1: rank_class, icon = "rank-2", "🥈"
+                elif i == 2: rank_class, icon = "rank-3", "🥉"
+                else: rank_class, icon = "rank-other", f"{i+1}위"
+                
+                st.markdown(f"""
+                <div class="ranking-card {rank_class}">
+                    <div>{icon} {r_user}님</div>
+                    <div>{r_score} 점</div>
+                </div>
+                """, unsafe_allow_html=True)
 
     # ------------------------------------------
     # [탭 6] D-day 일정 관리
