@@ -3,6 +3,7 @@ import streamlit.components.v1 as components
 import sqlite3
 import datetime
 import time
+import random
 import google.generativeai as genai
 
 # ==========================================
@@ -27,6 +28,37 @@ c.execute('''CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY, passwor
 c.execute('''CREATE TABLE IF NOT EXISTS dday_records (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, title TEXT, target_date TEXT)''')
 c.execute('''CREATE TABLE IF NOT EXISTS game_scores (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, score INTEGER, date TEXT)''')
 conn.commit()
+
+# ==========================================
+# [감성 아이스브레이킹 멘트 리스트]
+# ==========================================
+GREETINGS = [
+    "편하게 인사부터 해볼까요 우리? 오늘 하루 어땠나요?",
+    "이곳에 오신 걸 환영해요. 지금 마음속에 떠오르는 감정은 어떤 색깔인가요?",
+    "오늘 하루도 정말 수고 많으셨어요. 어떤 이야기든 편하게 들려주세요.",
+    "많이 지치고 힘든 하루였나요? 제가 당신의 이야기를 들어드릴게요.",
+    "따뜻한 차 한 잔 마시듯, 편안하게 마주 앉아 이야기 나눠볼까요?",
+    "누구에게도 말하지 못했던 고민이 있다면, 이곳에 살짝 내려놓아 보세요.",
+    "당신의 오늘 하루가 어땠는지 궁금해요. 사소한 이야기도 좋아요.",
+    "숨을 크게 한 번 내쉬고, 마음속 무거운 짐을 조금 덜어내 볼까요?",
+    "잘 오셨어요. 당신의 마음이 조금이나마 가벼워질 수 있도록 제가 도울게요.",
+    "어떤 감정이든 괜찮아요. 당신이 느끼는 모든 것은 자연스러운 거니까요.",
+    "오늘 하루, 나 자신에게 해주고 싶은 말이 있나요?",
+    "바쁘게 달려온 오늘, 잠시 멈춰서 당신의 마음을 들여다볼까요?",
+    "말하기 어려운 고민이라면, 그저 '힘들다'고만 적어주셔도 괜찮아요.",
+    "당신의 이야기를 들을 준비가 되어 있어요. 천천히 시작해 볼까요?",
+    "비가 오는 날 우산이 되어드릴게요. 어떤 비를 맞고 계신가요?",
+    "마음속에 엉켜있는 실타래를 저와 함께 조금씩 풀어볼까요?",
+    "오늘 하루 중 가장 기억에 남는 순간은 언제였나요?",
+    "당신의 마음 날씨는 지금 어떤가요? 맑음, 흐림, 아니면 비?",
+    "혼자 견디기 벅찬 감정이 있다면, 저에게 조금 나눠주세요.",
+    "아무 말이나 좋아요. 당신의 타이핑 소리에 귀 기울이고 있을게요.",
+    "수고했어요, 정말로. 오늘 하루를 버텨낸 당신에게 박수를 보내고 싶어요.",
+    "마음이 쉴 곳이 필요할 때, 언제든 이곳을 찾아주세요. 자, 무슨 이야기부터 할까요?",
+    "당신의 감정은 모두 소중해요. 오늘은 어떤 감정이 당신을 찾아왔나요?",
+    "조용히 당신의 이야기에 귀 기울일게요. 편하게 말씀해 주세요.",
+    "오늘 하루, 당신을 미소 짓게 한 작은 일상이 있었나요?"
+]
 
 # ==========================================
 # [CSS] 서울남산체 웹 폰트 적용 및 UI/UX 디자인
@@ -123,6 +155,7 @@ if 'user_id' not in st.session_state: st.session_state['user_id'] = ""
 if 'id_checked' not in st.session_state: st.session_state['id_checked'] = False
 if 'valid_id' not in st.session_state: st.session_state['valid_id'] = ""
 if 'chat_session' not in st.session_state: st.session_state['chat_session'] = [] 
+if 'greeting_msg' not in st.session_state: st.session_state['greeting_msg'] = random.choice(GREETINGS)
 
 # ==========================================
 # [화면 구성] 1. 로그인 / 회원가입 화면
@@ -152,6 +185,7 @@ if not st.session_state['logged_in']:
                     st.session_state['logged_in'] = True
                     st.session_state['user_id'] = login_id
                     st.session_state['chat_session'] = [] 
+                    st.session_state['greeting_msg'] = random.choice(GREETINGS) # 로그인 시 새로운 인사말 배정
                     st.rerun()
                 else:
                     st.error("아이디 또는 비밀번호가 일치하지 않습니다.")
@@ -237,7 +271,7 @@ else:
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["💬 AI 마음 상담", "📚 나의 기록", "📊 스트레스 분석", "🌙 수면 사운드", "🎮 스트레스 타파", "📅 D-day 관리"])
 
     # ------------------------------------------
-    # [탭 1] AI 마음 상담
+    # [탭 1] AI 마음 상담 (감성 아이스브레이킹 적용)
     # ------------------------------------------
     with tab1:
         col_t1, col_t2 = st.columns([4, 1])
@@ -245,12 +279,14 @@ else:
         with col_t2:
             if st.button("🔄 새 상담 시작 (초기화)", use_container_width=True):
                 st.session_state['chat_session'] = []
+                st.session_state['greeting_msg'] = random.choice(GREETINGS) # 초기화 시 새로운 인사말 배정
                 st.rerun()
 
+        # 대화 기록이 없을 때, 상담사가 먼저 말을 거는 형태의 UI 출력
         if not st.session_state['chat_session']:
-            st.markdown("""
-            <div style="background-color: rgba(255,255,255,0.1); border-left: 5px solid #c084fc; padding: 15px; border-radius: 10px; color: #ffffff; font-size: 18px; font-weight: bold; margin-bottom: 20px;">
-                💡 아래 입력창에 고민을 적어주시면 상담이 시작됩니다. 추가 질문도 언제든 가능해요!
+            st.markdown(f"""
+            <div class='chat-ai'>
+                <span>🌿 <b>상담사:</b><br><br>{st.session_state['greeting_msg']}</span>
             </div>
             """, unsafe_allow_html=True)
         else:
@@ -400,7 +436,7 @@ else:
         )
         st.markdown("<hr style='border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
         
-        if "장작" in sound_choice: st.video("https://youtu.be/Bb0d96fC7bc?si=RWZo52J3o1VNgW8g") 
+        if "장작" in sound_choice: st.video("https://www.youtube.com/watch?v=3_cE2_Mh2L0") 
         elif "빗소리" in sound_choice: st.video("https://www.youtube.com/watch?v=mPZkdNFkNps")
         elif "주파수" in sound_choice: st.video("https://www.youtube.com/watch?v=1ZYbU82GVz4") 
         elif "파도" in sound_choice: st.video("https://www.youtube.com/watch?v=bn9F19Hi1Lk")
@@ -409,7 +445,7 @@ else:
         elif "카페" in sound_choice: st.video("https://www.youtube.com/watch?v=gaGrHUekGrc")
 
     # ------------------------------------------
-    # [탭 5] 스트레스 타파 미니게임 (리얼 사운드 적용)
+    # [탭 5] 스트레스 타파 미니게임
     # ------------------------------------------
     with tab5:
         st.markdown("### 🎮 스트레스 타파 미니게임")
@@ -542,7 +578,6 @@ else:
                 }} catch(e) {{ clearInterval(hideInterval); }}
             }}, 100);
 
-            // 리얼한 사운드로 전면 교체 (얼음 파쇄음 & 벌레 터지는 소리)
             const iceSound = 'https://assets.mixkit.co/active_storage/sfx/2676/2676-preview.mp3'; 
             const squishSound = 'https://assets.mixkit.co/active_storage/sfx/2772/2772-preview.mp3'; 
             const eatSound = 'https://assets.mixkit.co/active_storage/sfx/2902/2902-preview.mp3';
