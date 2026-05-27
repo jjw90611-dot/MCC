@@ -113,13 +113,23 @@ st.markdown("""
     .counseling-table th { background: linear-gradient(45deg, #3b82f6, #8b5cf6); color: #ffffff; padding: 12px; font-weight: 900; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 14px; white-space: nowrap; }
     .counseling-table td { padding: 12px; border: 1px solid rgba(255, 255, 255, 0.1); vertical-align: middle; line-height: 1.4; }
 
-    /* 라디오 버튼 (스트레스 진단) 공통 디자인 - 다크 테마에 맞춤 */
+    /* ==========================================
+       [가독성 극대화] 라디오 버튼 (스트레스 진단) 디자인
+       ========================================== */
     div[role="radiogroup"] {
-        background-color: rgba(30, 41, 59, 0.6) !important;
-        padding: 15px 20px !important;
-        border-radius: 10px !important;
-        border: 1px solid rgba(192, 132, 252, 0.4) !important;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
+        background-color: rgba(15, 23, 42, 0.8) !important; /* 배경을 더 어둡게 눌러서 글자가 돋보이게 */
+        padding: 20px !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(192, 132, 252, 0.6) !important;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.3) !important;
+    }
+
+    /* 라디오 버튼 안의 글자(선택지)를 완전한 흰색으로, 크고 선명하게 강제 지정 */
+    div[role="radiogroup"] label p {
+        color: #ffffff !important; 
+        font-size: 16px !important; 
+        font-weight: bold !important;
+        letter-spacing: -0.5px !important; /* 자간을 살짝 좁혀서 가독성 향상 */
     }
 
     /* ==========================================
@@ -297,7 +307,7 @@ else:
     with tab1:
         st.markdown("### 💬 마음 상담 채팅")
         
-        # [추가된 부분] 공식적인 비밀보장 서약 안내문
+        # 공식적인 비밀보장 서약 안내문
         st.markdown("""
         <div style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
             <div style="color: #34d399; font-weight: 900; font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
@@ -430,7 +440,8 @@ else:
             "19. 직장 내 괴롭힘이나 부당한 대우를 경험한 적이 있다.", "20. 현재의 직무가 내 적성이나 경력 개발에 도움이 되지 않는다."
         ]
         
-        options = ["전혀 그렇지 않다 (1점)", "그렇지 않다 (2점)", "보통이다 (3점)", "그렇다 (4점)", "매 창 매우 그렇다 (5점)"]
+        # [수정됨] 군더더기 텍스트를 빼고 아주 깔끔하게 원상복구 했습니다.
+        options = ["전혀 그렇지 않다", "그렇지 않다", "보통이다", "그렇다", "매우 그렇다"]
         
         with st.form("stress_test_form"):
             scores = []
@@ -477,7 +488,7 @@ else:
         )
         st.markdown("<hr style='border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
         
-        if "장작" in sound_choice: st.video("https://youtu.be/Bb0d96fC7bc?si=rFoTYw6Y0ILetM2c") 
+        if "장작" in sound_choice: st.video("https://www.youtube.com/watch?v=3_cE2_Mh2L0") 
         elif "빗소리" in sound_choice: st.video("https://www.youtube.com/watch?v=mPZkdNFkNps")
         elif "주파수" in sound_choice: st.video("https://www.youtube.com/watch?v=1ZYbU82GVz4") 
         elif "파도" in sound_choice: st.video("https://www.youtube.com/watch?v=bn9F19Hi1Lk")
