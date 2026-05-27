@@ -6,6 +6,7 @@ import time
 import random
 import requests
 import json
+import re  # [추가됨] 한자 필터링을 위한 정규표현식 라이브러리
 
 # ==========================================
 # [초기 설정] 페이지 세팅 (PC에서 너무 퍼지지 않게 centered 적용)
@@ -346,8 +347,9 @@ else:
                 else:
                     with st.spinner("AI 심리상담사가 답변을 준비하고 있습니다..."):
                         try:
+                            # [수정됨] 프롬프트 초강화: 한자 및 괄호 병기 절대 금지
                             messages = [
-                                {"role": "system", "content": "당신은 포스코 퓨처엠 직장인들의 마음을 치유해주는 따뜻하고 공감 능력이 뛰어난 전문 심리 상담사입니다. **[가장 중요한 원칙]: 반드시 100% 한국어로만 답변하세요. 한자(漢字), 러시아어, 영어 등 외국어는 절대 사용하지 마세요.** 내담자의 질문에 깊이 공감해주고 마음이 편안해질 수 있는 따뜻한 위로와 조언을 3~4문단으로 작성해주세요. 말투는 '~해요', '~습니다' 등 다정하고 존중하는 어투를 사용하세요."}
+                                {"role": "system", "content": "당신은 포스코 퓨처엠 직장인들의 마음을 치유해주는 따뜻하고 공감 능력이 뛰어난 전문 심리 상담사입니다. **[가장 중요한 원칙]: 반드시 100% 순수 한글로만 답변하세요. 한자(漢字, Chinese characters), 영어 등 외국어는 단 한 글자도 절대 사용하지 마세요. 단어 뒤에 괄호를 치고 한자를 적는 행위도 절대 금지합니다.** 내담자의 질문에 깊이 공감해주고 마음이 편안해질 수 있는 따뜻한 위로와 조언을 3~4문단으로 작성해주세요. 말투는 '~해요', '~습니다' 등 다정하고 존중하는 어투를 사용하세요."}
                             ]
                             for m in st.session_state['chat_session']:
                                 messages.append({"role": "user", "content": m['worry']})
@@ -371,6 +373,16 @@ else:
                             
                             if response.status_code == 200:
                                 answer = response.json()['choices'][0]['message']['content']
+                                
+                                # ==========================================
+                                # [추가됨] 철통 방어: 정규표현식으로 한자 원천 삭제
+                                # ==========================================
+                                # 1. 괄호 안에 한자가 있는 경우 괄호째로 삭제 (예: (心理) -> 삭제)
+                                answer = re.sub(r'\([一-龥\s,]+\)', '', answer)
+                                # 2. 혹시라도 남아있는 모든 한자 삭제
+                                answer = re.sub(r'[一-龥]', '', answer)
+                                # 3. 한자가 지워지고 남은 빈 괄호 찌꺼기 삭제
+                                answer = answer.replace('()', '').replace(' ( )', '').strip()
                                 
                                 now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                                 c.execute("INSERT INTO counseling_records (user_id, date, worry, answer) VALUES (?, ?, ?, ?)", 
@@ -488,6 +500,7 @@ else:
         )
         st.markdown("<hr style='border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
         
+        # [수정됨] 요청하신 유튜브 링크 적용
         if "장작" in sound_choice: st.video("https://youtu.be/Bb0d96fC7bc?si=NDPL1dN7bmsd6DhT") 
         elif "빗소리" in sound_choice: st.video("https://www.youtube.com/watch?v=mPZkdNFkNps")
         elif "주파수" in sound_choice: st.video("https://www.youtube.com/watch?v=1ZYbU82GVz4") 
@@ -648,7 +661,6 @@ else:
             const squishSound = 'https://assets.mixkit.co/active_storage/sfx/2772/2772-preview.mp3'; 
             const eatSound = 'https://assets.mixkit.co/active_storage/sfx/2902/2902-preview.mp3';
 
-            // [수정됨] 볼륨 조절이 가능하도록 함수 변경
             function playSound(url, vol) {{ 
                 let audio = new Audio(url); 
                 audio.volume = vol || 1.0; 
@@ -670,13 +682,13 @@ else:
                 el.setAttribute('data-hits', hits);
                 
                 if(hits === 1) {{
-                    playSound(crackSound, 0.5); // 얼음 금가는 소리 볼륨 50%
+                    playSound(crackSound, 0.5); 
                     el.style.backgroundImage = crack1 + ", linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(165,243,252,0.6) 100%)";
                 }} else if(hits === 2) {{
                     playSound(crackSound, 0.5);
                     el.style.backgroundImage = crack2 + ", linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(165,243,252,0.6) 100%)";
                 }} else {{
-                    playSound(smashSound, 0.6); // 얼음 깨지는 소리 볼륨 60%
+                    playSound(smashSound, 0.6); 
                     el.classList.add('shattered');
                     setTimeout(() => {{ el.style.display = 'none'; }}, 1000);
                 }}
@@ -735,7 +747,6 @@ else:
                 ant.addEventListener('pointerdown', function() {{
                     if(!gameActive) return;
                     
-                    // [수정됨] 개미 터지는 소리 볼륨을 25%로 대폭 낮춤 (타격감은 유지)
                     playSound(squishSound, 0.25);
                     
                     score += 10;
@@ -768,7 +779,7 @@ else:
                     let distance = Math.sqrt(dx*dx + dy*dy);
                     
                     if(distance < 40) {{ 
-                        playSound(eatSound, 0.4); // 식빵 먹히는 소리 볼륨 40%
+                        playSound(eatSound, 0.4); 
                         breadScale -= 0.15; 
                         if(breadScale <= 0.2) {{
                             breadScale = 0;
