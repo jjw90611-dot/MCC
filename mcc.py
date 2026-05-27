@@ -4,7 +4,7 @@ import sqlite3
 import datetime
 import time
 import random
-import requests  # 구글 패키지 대신 기본 통신 라이브러리 사용
+import requests
 import json
 
 # ==========================================
@@ -13,12 +13,12 @@ import json
 st.set_page_config(page_title="스마트 마음 상담 센터", page_icon="🌙", layout="wide")
 
 # ==========================================
-# [Gemini API 키 설정]
+# [Groq API 키 설정] - 구글 대신 에러 없는 Groq 사용
 # ==========================================
 try:
-    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+    GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 except:
-    st.error("⚠️ 스트림릿 설정(Settings) -> Secrets에 'GEMINI_API_KEY'를 먼저 입력해주세요!")
+    st.error("⚠️ 스트림릿 설정(Settings) -> Secrets에 'GROQ_API_KEY'를 먼저 입력해주세요!")
     st.stop()
 
 # ==========================================
@@ -44,7 +44,7 @@ GREETINGS = [
 ]
 
 # ==========================================
-# [CSS] 모바일 반응형 및 UI/UX 디자인
+# [CSS] 모바일 반응형 및 UI/UX 디자인 (표 디자인 수정 완료)
 # ==========================================
 st.markdown("""
 <style>
@@ -108,10 +108,11 @@ st.markdown("""
     .chat-ai { text-align: left; margin-bottom: 25px; }
     .chat-ai span { background-color: rgba(192, 132, 252, 0.15); border: 1px solid #c084fc; padding: 12px 15px; border-radius: 20px 20px 20px 0; display: inline-block; font-size: 15px; line-height: 1.6; box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-width: 90%; word-break: break-word; }
 
-    .table-container { overflow-x: auto; }
+    /* PC 화면에서 표가 예쁘게 가운데로 모이도록 수정된 부분 */
+    .table-container { display: flex; justify-content: center; overflow-x: auto; padding: 10px; }
     .counseling-table {
-        width: 100%; min-width: 500px; margin: 30px auto; border-collapse: collapse;
-        background-color: rgba(255, 255, 255, 0.03); color: #e2e8f0; font-size: 14px;
+        width: 100%; max-width: 850px; min-width: 500px; margin: 20px auto; border-collapse: collapse;
+        background-color: rgba(255, 255, 255, 0.03); color: #e2e8f0; font-size: 15px;
         text-align: center; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
     .counseling-table th { background: linear-gradient(45deg, #3b82f6, #8b5cf6); color: #ffffff; padding: 12px; font-weight: 900; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 14px; white-space: nowrap; }
@@ -261,7 +262,7 @@ else:
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["💬 AI 상담", "📚 기록", "📊 스트레스", "🌙 사운드", "🎮 게임", "📅 D-day"])
 
     # ------------------------------------------
-    # [탭 1] AI 마음 상담 (REST API 직접 통신 방식)
+    # [탭 1] AI 마음 상담 (Groq API 적용)
     # ------------------------------------------
     with tab1:
         st.markdown("### 💬 마음 상담 채팅")
@@ -291,33 +292,32 @@ else:
                 else:
                     with st.spinner("AI 심리상담사가 답변을 준비하고 있습니다..."):
                         try:
-                            context = ""
+                            # 대화 기록 구성
+                            messages = [
+                                {"role": "system", "content": "당신은 직장인들의 마음을 치유해주는 따뜻하고 공감 능력이 뛰어난 전문 심리 상담사입니다. 내담자의 질문에 깊이 공감해주고 마음이 편안해질 수 있는 따뜻한 위로와 조언을 3~4문단으로 작성해주세요. 말투는 '~해요', '~습니다' 등 다정하고 존중하는 어투를 사용하세요. 한국어로만 대답하세요."}
+                            ]
                             for m in st.session_state['chat_session']:
-                                context += f"내담자: {m['worry']}\n상담사: {m['answer']}\n\n"
+                                messages.append({"role": "user", "content": m['worry']})
+                                messages.append({"role": "assistant", "content": m['answer']})
                             
-                            prompt = f"""
-                            당신은 직장인들의 마음을 치유해주는 따뜻하고 공감 능력이 뛰어난 전문 심리 상담사입니다.
-                            [이전 대화 문맥]
-                            {context}
+                            messages.append({"role": "user", "content": worry_input})
                             
-                            [내담자의 새로운 질문/고민]
-                            "{worry_input}"
-                            
-                            위 문맥을 참고하여, 내담자의 새로운 질문에 깊이 공감해주고 마음이 편안해질 수 있는 따뜻한 위로와 조언을 3~4문단으로 작성해주세요. 말투는 '~해요', '~습니다' 등 다정하고 존중하는 어투를 사용하세요.
-                            """
-                            
-                            # 구글 패키지 대신 REST API로 직접 요청 (버전 에러 원천 차단)
-                            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
-
-                            headers = {'Content-Type': 'application/json'}
+                            # Groq API 호출 (Llama 3 모델)
+                            url = "https://api.groq.com/openai/v1/chat/completions"
+                            headers = {
+                                "Authorization": f"Bearer {GROQ_API_KEY}",
+                                "Content-Type": "application/json"
+                            }
                             data = {
-                                "contents": [{"parts": [{"text": prompt}]}]
+                                "model": "llama3-70b-8192",
+                                "messages": messages,
+                                "temperature": 0.7
                             }
                             
                             response = requests.post(url, headers=headers, json=data)
                             
                             if response.status_code == 200:
-                                answer = response.json()['candidates'][0]['content']['parts'][0]['text']
+                                answer = response.json()['choices'][0]['message']['content']
                                 
                                 now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                                 c.execute("INSERT INTO counseling_records (user_id, date, worry, answer) VALUES (?, ?, ?, ?)", 
@@ -327,7 +327,7 @@ else:
                                 st.session_state['chat_session'].append({'worry': worry_input, 'answer': answer})
                                 st.rerun()
                             else:
-                                st.error(f"⚠️ 구글 서버 응답 오류 (코드: {response.status_code})")
+                                st.error(f"⚠️ AI 서버 응답 오류 (코드: {response.status_code})")
                                 st.error(response.text)
                                 
                         except Exception as e:
