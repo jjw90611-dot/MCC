@@ -4,7 +4,7 @@ import sqlite3
 import datetime
 import time
 import random
-import google.generativeai as genai
+from openai import OpenAI  # 제미나이 대신 OpenAI 패키지를 불러옵니다.
 
 # ==========================================
 # [초기 설정] 페이지 세팅
@@ -12,12 +12,17 @@ import google.generativeai as genai
 st.set_page_config(page_title="스마트 마음 상담 센터", page_icon="🌙", layout="wide")
 
 # ==========================================
-# 1. 스트림릿 비밀 금고에서 API 키를 안전하게 불러옵니다.
-api_key = st.secrets["AIzaSyCyBuMcnr8C1SJgmqeX_Ykk9seAvQzoLxg"]
-genai.configure(api_key=api_key)
+# [OpenAI 설정] - GPT 모델 적용 및 보안 강화
+# ==========================================
+# ⚠️ 주의: 깃허브에 API 키가 노출되지 않도록 스트림릿 비밀금고(Secrets)에서 키를 불러옵니다.
+try:
+    OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+except:
+    st.error("⚠️ 스트림릿 설정(Settings) -> Secrets에 'OPENAI_API_KEY'를 먼저 입력해주세요!")
+    st.stop()
 
-# 2. 모델은 가장 최신 버전인 1.5-flash로 설정합니다.
-model = genai.GenerativeModel('gemini-1.5-flash')
+client = OpenAI(api_key=OPENAI_API_KEY)
+
 # ==========================================
 # [데이터베이스 설정] SQLite3
 # ==========================================
@@ -271,7 +276,7 @@ else:
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["💬 AI 마음 상담", "📚 나의 기록", "📊 스트레스 분석", "🌙 수면 사운드", "🎮 스트레스 타파", "📅 D-day 관리"])
 
     # ------------------------------------------
-    # [탭 1] AI 마음 상담
+    # [탭 1] AI 마음 상담 (OpenAI 적용)
     # ------------------------------------------
     with tab1:
         col_t1, col_t2 = st.columns([4, 1])
@@ -306,18 +311,18 @@ else:
                             for m in st.session_state['chat_session']:
                                 context += f"내담자: {m['worry']}\n상담사: {m['answer']}\n\n"
                             
-                            prompt = f"""
-                            당신은 직장인들의 마음을 치유해주는 따뜻하고 공감 능력이 뛰어난 전문 심리 상담사입니다.
-                            [이전 대화 문맥]
-                            {context}
+                            system_prompt = "당신은 직장인들의 마음을 치유해주는 따뜻하고 공감 능력이 뛰어난 전문 심리 상담사입니다. 말투는 '~해요', '~습니다' 등 다정하고 존중하는 어투를 사용하세요."
+                            user_prompt = f"[이전 대화 문맥]\n{context}\n\n[내담자의 새로운 질문/고민]\n\"{worry_input}\"\n\n위 문맥을 참고하여, 내담자의 새로운 질문에 깊이 공감해주고 마음이 편안해질 수 있는 따뜻한 위로와 조언을 3~4문단으로 작성해주세요."
                             
-                            [내담자의 새로운 질문/고민]
-                            "{worry_input}"
-                            
-                            위 문맥을 참고하여, 내담자의 새로운 질문에 깊이 공감해주고 마음이 편안해질 수 있는 따뜻한 위로와 조언을 3~4문단으로 작성해주세요. 말투는 '~해요', '~습니다' 등 다정하고 존중하는 어투를 사용하세요.
-                            """
-                            response = model.generate_content(prompt)
-                            answer = response.text
+                            # OpenAI API 호출
+                            response = client.chat.completions.create(
+                                model="gpt-3.5-turbo", # 빠르고 저렴한 모델
+                                messages=[
+                                    {"role": "system", "content": system_prompt},
+                                    {"role": "user", "content": user_prompt}
+                                ]
+                            )
+                            answer = response.choices[0].message.content
                             
                             now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                             c.execute("INSERT INTO counseling_records (user_id, date, worry, answer) VALUES (?, ?, ?, ?)", 
@@ -327,10 +332,9 @@ else:
                             st.session_state['chat_session'].append({'worry': worry_input, 'answer': answer})
                             st.rerun()
                         except Exception as e:
-                            # 에러 발생 시 원인을 명확하게 보여주도록 수정
                             st.error("⚠️ AI 응답 중 오류가 발생했습니다.")
                             st.error(f"상세 오류 메시지: {e}")
-                            st.info("💡 해결 팁: 터미널에서 'pip install --upgrade google-generativeai'를 입력해 패키지를 업데이트한 후 다시 실행해보세요!")
+                            st.info("💡 해결 팁: 깃허브 requirements.txt 파일에 'openai' 가 있는지 확인해주세요!")
 
     # ------------------------------------------
     # [탭 2] 나의 마음 기록
