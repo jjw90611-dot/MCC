@@ -4,7 +4,7 @@ import sqlite3
 import datetime
 import time
 import random
-import requests # 구글 패키지 대신 파이썬 기본 통신 모듈을 사용합니다!
+import requests
 
 # ==========================================
 # [초기 설정] 페이지 세팅
@@ -273,7 +273,7 @@ else:
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["💬 AI 마음 상담", "📚 나의 기록", "📊 스트레스 분석", "🌙 수면 사운드", "🎮 스트레스 타파", "📅 D-day 관리"])
 
     # ------------------------------------------
-    # [탭 1] AI 마음 상담 (직접 통신 방식)
+    # [탭 1] AI 마음 상담 (자동 우회 통신 방식)
     # ------------------------------------------
     with tab1:
         col_t1, col_t2 = st.columns([4, 1])
@@ -319,18 +319,25 @@ else:
                             위 문맥을 참고하여, 내담자의 새로운 질문에 깊이 공감해주고 마음이 편안해질 수 있는 따뜻한 위로와 조언을 3~4문단으로 작성해주세요. 말투는 '~해요', '~습니다' 등 다정하고 존중하는 어투를 사용하세요.
                             """
                             
-                            # 🚨 구글 패키지를 쓰지 않고, 파이썬 기본 기능으로 직접 구글 서버에 요청을 보냅니다.
-                            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
-                            headers = {'Content-Type': 'application/json'}
-                            payload = {
-                                "contents": [{"parts": [{"text": prompt}]}]
-                            }
+                            # 🚨 핵심 해결 코드: 구글의 3가지 모델 이름을 순서대로 테스트하여 무조건 작동하는 것을 찾습니다.
+                            models_to_try = ["gemini-1.5-flash-latest", "gemini-1.0-pro", "gemini-pro"]
+                            answer = None
+                            last_error = ""
                             
-                            response = requests.post(url, headers=headers, json=payload)
-                            
-                            if response.status_code == 200:
-                                answer = response.json()['candidates'][0]['content']['parts'][0]['text']
+                            for model_name in models_to_try:
+                                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GEMINI_API_KEY}"
+                                headers = {'Content-Type': 'application/json'}
+                                payload = {"contents": [{"parts": [{"text": prompt}]}]}
                                 
+                                response = requests.post(url, headers=headers, json=payload)
+                                
+                                if response.status_code == 200:
+                                    answer = response.json()['candidates'][0]['content']['parts'][0]['text']
+                                    break # 성공하면 즉시 반복문을 빠져나옵니다.
+                                else:
+                                    last_error = response.text # 실패하면 에러를 기록하고 다음 모델을 시도합니다.
+                            
+                            if answer:
                                 now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                                 c.execute("INSERT INTO counseling_records (user_id, date, worry, answer) VALUES (?, ?, ?, ?)", 
                                           (st.session_state['user_id'], now, worry_input, answer))
@@ -339,8 +346,8 @@ else:
                                 st.session_state['chat_session'].append({'worry': worry_input, 'answer': answer})
                                 st.rerun()
                             else:
-                                st.error("⚠️ 구글 AI 서버에서 오류를 반환했습니다.")
-                                st.error(f"상세 오류: {response.text}")
+                                st.error("⚠️ 구글 AI 서버에서 모든 모델의 접근을 거부했습니다.")
+                                st.error(f"마지막 상세 오류: {last_error}")
                                 
                         except Exception as e:
                             st.error("⚠️ 통신 중 오류가 발생했습니다.")
@@ -399,7 +406,7 @@ else:
             "9. 업무 환경(소음, 조명, 환기 등)이 불편하다.", "10. 퇴근 후에도 업무에 대한 걱정을 계속 한다.",
             "11. 내 능력에 비해 너무 어려운 업무가 주어진다.", "12. 타 부서와의 협조가 원활하게 이루어지지 않는다.",
             "13. 회사의 장래가 불투명하다고 느낀다.", "14. 업무로 인해 개인 생활(가족, 여가)에 지장을 받는다.",
-            "15. 직장에서 감정 노동(감정 숨기기 등)을 강요받는다.", "16. 상사의 지시가 일관성이 없어 혼란스럽다.",
+            "15. 직장에서 감정 노동(감정 파기 등)을 강요받는다.", "16. 상사의 지시가 일관성이 없어 혼란스럽다.",
             "17. 직무 수행에 필요한 지원이나 자원이 부족하다.", "18. 승진이나 보상 체계가 불공정하다고 느낀다.",
             "19. 직장 내 괴롭힘이나 부당한 대우를 경험한 적이 있다.", "20. 현재의 직무가 내 적성이나 경력 개발에 도움이 되지 않는다."
         ]
