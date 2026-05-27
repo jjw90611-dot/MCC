@@ -313,7 +313,7 @@ else:
                                 "Content-Type": "application/json"
                             }
                             data = {
-                                "model": "llama3-70b-8192",
+                                "model": "llama-3.3-70b-versatile",
                                 "messages": messages,
                                 "temperature": 0.7
                             }
