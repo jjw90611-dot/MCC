@@ -1,4 +1,4 @@
- import streamlit as st
+import streamlit as st
 import streamlit.components.v1 as components
 import sqlite3
 import datetime
@@ -12,7 +12,7 @@ import google.generativeai as genai
 st.set_page_config(page_title="스마트 마음 상담 센터", page_icon="🌙", layout="wide")
 
 # ==========================================
-# [Gemini AI 설정] - 새 API 키 적용!
+# [Gemini AI 설정]
 # ==========================================
 try:
     GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
@@ -21,7 +21,6 @@ except:
     st.stop()
 
 genai.configure(api_key=GEMINI_API_KEY)
-# 가장 빠르고 똑똑한 최신 무료 모델 적용
 model = genai.GenerativeModel('gemini-1.5-flash') 
 
 # ==========================================
@@ -67,7 +66,7 @@ GREETINGS = [
 ]
 
 # ==========================================
-# [CSS] 서울남산체 웹 폰트 적용 및 UI/UX 디자인
+# [CSS] 모바일 반응형 및 UI/UX 디자인
 # ==========================================
 st.markdown("""
 <style>
@@ -83,25 +82,26 @@ st.markdown("""
 
     .stApp { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #f8fafc; }
     
+    /* 타이틀 디자인 */
     .neon-title {
         font-size: 55px; font-weight: 900; color: #ffffff; text-align: center;
-        margin-top: 20px; margin-bottom: 10px; letter-spacing: 2px;
+        margin-top: 20px; margin-bottom: 10px; letter-spacing: 2px; line-height: 1.2;
         text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #c084fc, 0 0 40px #c084fc, 0 0 80px #c084fc, 0 0 90px #c084fc;
     }
-    .sub-title { color: #e2e8f0; font-size: 20px; margin-bottom: 40px; font-weight: 500; text-align: center; }
+    .sub-title { color: #e2e8f0; font-size: 20px; margin-bottom: 40px; font-weight: 500; text-align: center; word-break: keep-all; }
     
+    /* 입력창 디자인 */
     div[data-baseweb="input"] > div, div[data-baseweb="textarea"] > div {
         background-color: #1e293b !important; border: 2px solid #c084fc !important; border-radius: 10px !important;
     }
-    input, textarea { color: #ffffff !important; font-size: 18px !important; font-weight: bold !important; }
-    label { color: #fbcfe8 !important; font-size: 18px !important; font-weight: bold !important; }
+    input, textarea { color: #ffffff !important; font-size: 16px !important; font-weight: bold !important; }
+    label { color: #fbcfe8 !important; font-size: 16px !important; font-weight: bold !important; }
 
-    div[role="radiogroup"] label p { color: #ffffff !important; font-size: 17px !important; }
-
+    /* 버튼 디자인 */
     div[data-testid="stButton"] > button, div[data-testid="stFormSubmitButton"] > button {
         background: linear-gradient(45deg, #4f46e5, #9333ea) !important; 
         color: #ffffff !important; 
-        font-weight: 900 !important; font-size: 18px !important; padding: 10px 20px !important;
+        font-weight: 900 !important; font-size: 16px !important; padding: 10px 20px !important;
         border: none !important; border-radius: 12px !important;
         box-shadow: 0 4px 15px rgba(147, 51, 234, 0.5) !important; transition: all 0.3s ease !important;
     }
@@ -109,47 +109,65 @@ st.markdown("""
         transform: translateY(-2px) !important; box-shadow: 0 6px 20px rgba(147, 51, 234, 0.8) !important; 
     }
 
-    .post-it-container { display: flex; justify-content: center; gap: 25px; margin-bottom: 50px; flex-wrap: wrap; }
+    /* 포스트잇 디자인 */
+    .post-it-container { display: flex; justify-content: center; gap: 20px; margin-bottom: 40px; flex-wrap: wrap; }
     .post-it {
-        width: 200px; padding: 25px 20px; color: #1e293b; font-size: 18px; font-weight: 900; text-align: center; 
+        width: 180px; padding: 20px 15px; color: #1e293b; font-size: 16px; font-weight: 900; text-align: center; 
         border-radius: 2px 15px 15px 2px; box-shadow: 5px 5px 20px rgba(0,0,0,0.4); position: relative;
     }
     .post-it::before {
-        content: ""; position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-        width: 50px; height: 20px; background: rgba(255,255,255,0.5); box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        content: ""; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+        width: 40px; height: 15px; background: rgba(255,255,255,0.5); box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
     .p1 { transform: rotate(-4deg); background: #fef08a; }
     .p2 { transform: rotate(3deg); background: #bbf7d0; }
     .p3 { transform: rotate(-3deg); background: #fbcfe8; }
     
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; justify-content: center; }
-    .stTabs [data-baseweb="tab"] { background-color: rgba(255,255,255,0.05); border-radius: 8px 8px 0 0; padding: 10px 20px; color: #cbd5e1; font-size: 18px; }
+    /* 탭 디자인 */
+    .stTabs [data-baseweb="tab-list"] { gap: 5px; justify-content: center; flex-wrap: wrap; }
+    .stTabs [data-baseweb="tab"] { background-color: rgba(255,255,255,0.05); border-radius: 8px 8px 0 0; padding: 8px 12px; color: #cbd5e1; font-size: 15px; white-space: nowrap; }
     .stTabs [aria-selected="true"] { background-color: rgba(192, 132, 252, 0.2); color: #fbcfe8 !important; border-bottom: 3px solid #c084fc; font-weight: bold; }
 
-    .record-card { background: rgba(255,255,255,0.05); border-left: 5px solid #c084fc; border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-    .record-date { color: #fbcfe8; font-size: 14px; font-weight: bold; margin-bottom: 10px; }
-    .record-worry { color: #ffffff; font-size: 18px; font-weight: 700; margin-bottom: 15px; line-height: 1.6; }
-    .record-answer { color: #e2e8f0; font-size: 17px; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 10px; line-height: 1.7; }
+    /* 채팅 및 기록 디자인 */
+    .record-card { background: rgba(255,255,255,0.05); border-left: 5px solid #c084fc; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+    .record-date { color: #fbcfe8; font-size: 13px; font-weight: bold; margin-bottom: 8px; }
+    .record-worry { color: #ffffff; font-size: 16px; font-weight: 700; margin-bottom: 12px; line-height: 1.5; }
+    .record-answer { color: #e2e8f0; font-size: 15px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; line-height: 1.6; }
     
     .chat-user { text-align: right; margin-bottom: 15px; }
-    .chat-user span { background-color: #334155; padding: 12px 20px; border-radius: 20px 20px 0 20px; display: inline-block; font-size: 17px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .chat-user span { background-color: #334155; padding: 10px 15px; border-radius: 20px 20px 0 20px; display: inline-block; font-size: 15px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-width: 85%; word-break: break-word; }
     .chat-ai { text-align: left; margin-bottom: 25px; }
-    .chat-ai span { background-color: rgba(192, 132, 252, 0.15); border: 1px solid #c084fc; padding: 15px 20px; border-radius: 20px 20px 20px 0; display: inline-block; font-size: 17px; line-height: 1.7; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .chat-ai span { background-color: rgba(192, 132, 252, 0.15); border: 1px solid #c084fc; padding: 12px 15px; border-radius: 20px 20px 20px 0; display: inline-block; font-size: 15px; line-height: 1.6; box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-width: 90%; word-break: break-word; }
 
+    /* 테이블 디자인 */
+    .table-container { overflow-x: auto; }
     .counseling-table {
-        width: 100%; max-width: 900px; margin: 50px auto; border-collapse: collapse;
-        background-color: rgba(255, 255, 255, 0.03); color: #e2e8f0; font-size: 15px;
+        width: 100%; min-width: 500px; margin: 30px auto; border-collapse: collapse;
+        background-color: rgba(255, 255, 255, 0.03); color: #e2e8f0; font-size: 14px;
         text-align: center; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
-    .counseling-table th { background: linear-gradient(45deg, #3b82f6, #8b5cf6); color: #ffffff; padding: 15px; font-weight: 900; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 16px; }
-    .counseling-table td { padding: 15px; border: 1px solid rgba(255, 255, 255, 0.1); vertical-align: middle; line-height: 1.5; }
-    .counseling-table tr:hover { background-color: rgba(255, 255, 255, 0.08); }
+    .counseling-table th { background: linear-gradient(45deg, #3b82f6, #8b5cf6); color: #ffffff; padding: 12px; font-weight: 900; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 14px; white-space: nowrap; }
+    .counseling-table td { padding: 12px; border: 1px solid rgba(255, 255, 255, 0.1); vertical-align: middle; line-height: 1.4; }
     
-    .ranking-card { background: rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 20px; font-weight: bold; }
+    /* 랭킹 카드 */
+    .ranking-card { background: rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: bold; }
     .rank-1 { border-left: 5px solid #fbbf24; color: #fbbf24; }
     .rank-2 { border-left: 5px solid #94a3b8; color: #94a3b8; }
     .rank-3 { border-left: 5px solid #b45309; color: #b45309; }
     .rank-other { border-left: 5px solid #c084fc; color: #ffffff; }
+
+    /* 📱 모바일 전용 반응형 CSS (화면 너비 768px 이하일 때 작동) */
+    @media (max-width: 768px) {
+        .neon-title { font-size: 38px !important; margin-top: 10px; }
+        .sub-title { font-size: 16px !important; margin-bottom: 20px; }
+        .post-it { width: 45%; padding: 15px 10px; font-size: 14px; }
+        .stTabs [data-baseweb="tab"] { font-size: 13px; padding: 6px 10px; }
+        .chat-user span, .chat-ai span { font-size: 14px; }
+        .record-worry { font-size: 15px; }
+        .record-answer { font-size: 14px; }
+        div[data-testid="stButton"] > button { font-size: 14px !important; padding: 8px 15px !important; }
+        .ranking-card { font-size: 14px; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -167,8 +185,9 @@ if 'greeting_msg' not in st.session_state: st.session_state['greeting_msg'] = ra
 # [화면 구성] 1. 로그인 / 회원가입 화면
 # ==========================================
 if not st.session_state['logged_in']:
-    st.markdown("<div class='neon-title'>스마트 마음 상담소</div>", unsafe_allow_html=True)
-    st.markdown("<div class='sub-title'>당신의 지친 하루를 따뜻하게 안아드릴게요. 편하게 기대어 보세요.</div>", unsafe_allow_html=True)
+    # 요청하신 "스마트 (엔터) 마음상담소" 타이틀 적용
+    st.markdown("<div class='neon-title'>스마트<br>마음 상담소</div>", unsafe_allow_html=True)
+    st.markdown("<div class='sub-title'>당신의 지친 하루를 따뜻하게 안아드릴게요.<br>편하게 기대어 보세요.</div>", unsafe_allow_html=True)
     
     st.markdown("""
     <div class="post-it-container">
@@ -178,7 +197,8 @@ if not st.session_state['logged_in']:
     </div>
     """, unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 2, 1])
+    # 모바일에서는 컬럼 비율이 자동으로 세로로 배치됩니다.
+    col1, col2, col3 = st.columns([1, 4, 1])
     with col2:
         auth_tab1, auth_tab2 = st.tabs(["🔑 로그인", "📝 회원가입"])
         with auth_tab1:
@@ -198,7 +218,7 @@ if not st.session_state['logged_in']:
                     
         with auth_tab2:
             reg_id = st.text_input("사용할 아이디", key="reg_id")
-            if st.button("아이디 중복 확인"):
+            if st.button("아이디 중복 확인", use_container_width=True):
                 if reg_id.strip() == "": st.warning("아이디를 입력해주세요.")
                 else:
                     c.execute("SELECT * FROM users WHERE user_id=?", (reg_id,))
@@ -224,69 +244,70 @@ if not st.session_state['logged_in']:
                     st.success("회원가입이 완료되었습니다! 로그인 탭에서 로그인해주세요.")
                     st.session_state['id_checked'] = False
 
+    # 모바일에서 표가 잘리지 않도록 가로 스크롤 컨테이너 추가
     st.markdown("""
-    <table class="counseling-table">
-        <thead>
-            <tr><th>지역</th><th>근무지</th><th>장소</th><th>상담사명</th><th>운영시간</th></tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td rowspan="4" style="font-weight: bold; color: #fbcfe8;">포항</td>
-                <td>포항본사</td><td rowspan="2">늘푸른솔커뮤니티센터<br>1층 회의실</td><td rowspan="2">윤영임</td><td rowspan="2">매주 화, 격주 목<br>09:00~18:00</td>
-            </tr>
-            <tr><td>포항사업실</td></tr>
-            <tr><td>포항양극재</td><td>신사무동 4층 상담실</td><td rowspan="2">김진아</td><td>매주 월<br>09:00~18:00</td></tr>
-            <tr><td>포항음극재</td><td>사무동 1층 보건실</td><td>격주 목<br>09:00~18:00</td></tr>
-            <tr>
-                <td rowspan="2" style="font-weight: bold; color: #fbcfe8;">광양</td>
-                <td>광양사업실</td><td>태인동 사무소<br>3층 마음쉼터</td><td>박정숙</td><td>매주 수<br>09:00~18:00</td>
-            </tr>
-            <tr><td>광양양극재</td><td>창의동 2층<br>건강관리실 內 고충상담실</td><td>이혜주</td><td>매주 화<br>09:00~18:00</td></tr>
-            <tr>
-                <td style="font-weight: bold; color: #fbcfe8;">세종</td>
-                <td>세종음극재</td><td>2공장 복지동<br>2층 혼창통</td><td>김유진</td><td>매주 화<br>10:00~19:00</td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="table-container">
+        <table class="counseling-table">
+            <thead>
+                <tr><th>지역</th><th>근무지</th><th>장소</th><th>상담사명</th><th>운영시간</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td rowspan="4" style="font-weight: bold; color: #fbcfe8;">포항</td>
+                    <td>포항본사</td><td rowspan="2">늘푸른솔커뮤니티센터<br>1층 회의실</td><td rowspan="2">윤영임</td><td rowspan="2">매주 화, 격주 목<br>09:00~18:00</td>
+                </tr>
+                <tr><td>포항사업실</td></tr>
+                <tr><td>포항양극재</td><td>신사무동 4층 상담실</td><td rowspan="2">김진아</td><td>매주 월<br>09:00~18:00</td></tr>
+                <tr><td>포항음극재</td><td>사무동 1층 보건실</td><td>격주 목<br>09:00~18:00</td></tr>
+                <tr>
+                    <td rowspan="2" style="font-weight: bold; color: #fbcfe8;">광양</td>
+                    <td>광양사업실</td><td>태인동 사무소<br>3층 마음쉼터</td><td>박정숙</td><td>매주 수<br>09:00~18:00</td>
+                </tr>
+                <tr><td>광양양극재</td><td>창의동 2층<br>건강관리실 內 고충상담실</td><td>이혜주</td><td>매주 화<br>09:00~18:00</td></tr>
+                <tr>
+                    <td style="font-weight: bold; color: #fbcfe8;">세종</td>
+                    <td>세종음극재</td><td>2공장 복지동<br>2층 혼창통</td><td>김유진</td><td>매주 화<br>10:00~19:00</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
     """, unsafe_allow_html=True)
 
 # ==========================================
 # [화면 구성] 2. 메인 서비스 화면
 # ==========================================
 else:
-    col_title, col_home, col_logout = st.columns([3, 1, 1])
-    with col_title:
-        st.markdown(f"<div class='neon-title' style='text-align: left; font-size: 40px;'>{st.session_state['user_id']}님의 마음 상담소</div>", unsafe_allow_html=True)
-    with col_home:
-        st.write("") 
-        st.write("") 
+    # 모바일 환경을 고려하여 타이틀과 버튼을 세로로 자연스럽게 배치
+    st.markdown(f"<div class='neon-title' style='font-size: 35px;'>{st.session_state['user_id']}님의<br>마음 상담소</div>", unsafe_allow_html=True)
+    
+    col_btn1, col_btn2 = st.columns(2)
+    with col_btn1:
         if st.button("🏠 홈 화면으로", use_container_width=True):
             st.session_state['logged_in'] = False
             st.session_state['user_id'] = ""
             st.session_state['chat_session'] = []
             st.rerun()
-    with col_logout:
-        st.write("") 
-        st.write("") 
+    with col_btn2:
         if st.button("🔒 로그아웃", use_container_width=True):
             st.session_state['logged_in'] = False
             st.session_state['user_id'] = ""
             st.session_state['chat_session'] = []
             st.rerun()
+            
+    st.write("")
 
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["💬 AI 마음 상담", "📚 나의 기록", "📊 스트레스 분석", "🌙 수면 사운드", "🎮 스트레스 타파", "📅 D-day 관리"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["💬 AI 상담", "📚 기록", "📊 스트레스", "🌙 사운드", "🎮 게임", "📅 D-day"])
 
     # ------------------------------------------
     # [탭 1] AI 마음 상담
     # ------------------------------------------
     with tab1:
-        col_t1, col_t2 = st.columns([4, 1])
-        with col_t1: st.markdown("### 💬 마음 상담 채팅")
-        with col_t2:
-            if st.button("🔄 새 상담 시작 (초기화)", use_container_width=True):
-                st.session_state['chat_session'] = []
-                st.session_state['greeting_msg'] = random.choice(GREETINGS) 
-                st.rerun()
+        st.markdown("### 💬 마음 상담 채팅")
+        if st.button("🔄 새 상담 시작 (초기화)", use_container_width=True):
+            st.session_state['chat_session'] = []
+            st.session_state['greeting_msg'] = random.choice(GREETINGS) 
+            st.rerun()
+        st.write("")
 
         if not st.session_state['chat_session']:
             st.markdown(f"""
@@ -323,7 +344,6 @@ else:
                             위 문맥을 참고하여, 내담자의 새로운 질문에 깊이 공감해주고 마음이 편안해질 수 있는 따뜻한 위로와 조언을 3~4문단으로 작성해주세요. 말투는 '~해요', '~습니다' 등 다정하고 존중하는 어투를 사용하세요.
                             """
                             
-                            # 구글 공식 패키지를 통한 정상적인 호출
                             response = model.generate_content(prompt)
                             answer = response.text
                             
@@ -342,16 +362,15 @@ else:
     # [탭 2] 나의 마음 기록
     # ------------------------------------------
     with tab2:
-        col_r1, col_r2 = st.columns([4, 1])
-        with col_r1: st.markdown("### 🕰️ 내가 걸어온 마음의 발자취")
-        with col_r2:
-            if st.button("🗑️ 전체 삭제", use_container_width=True):
-                c.execute("DELETE FROM counseling_records WHERE user_id=?", (st.session_state['user_id'],))
-                conn.commit()
-                st.session_state['chat_session'] = [] 
-                st.success("모든 기록이 삭제되었습니다.")
-                time.sleep(1)
-                st.rerun()
+        st.markdown("### 🕰️ 내가 걸어온 마음의 발자취")
+        if st.button("🗑️ 전체 삭제", use_container_width=True):
+            c.execute("DELETE FROM counseling_records WHERE user_id=?", (st.session_state['user_id'],))
+            conn.commit()
+            st.session_state['chat_session'] = [] 
+            st.success("모든 기록이 삭제되었습니다.")
+            time.sleep(1)
+            st.rerun()
+        st.write("")
                 
         c.execute("SELECT id, date, worry, answer FROM counseling_records WHERE user_id=? ORDER BY id DESC", (st.session_state['user_id'],))
         records = c.fetchall()
@@ -360,27 +379,24 @@ else:
         else:
             for record in records:
                 r_id, date, worry, answer = record
-                col_card, col_del = st.columns([6, 1])
-                with col_card:
-                    st.markdown(f"""
-                    <div class="record-card">
-                        <div class="record-date">🕒 {date}</div>
-                        <div class="record-worry">Q. {worry}</div>
-                        <div class="record-answer">A. {answer}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                with col_del:
-                    st.write("") 
-                    if st.button("❌ 삭제", key=f"del_rec_{r_id}", use_container_width=True):
-                        c.execute("DELETE FROM counseling_records WHERE id=?", (r_id,))
-                        conn.commit()
-                        st.rerun()
+                st.markdown(f"""
+                <div class="record-card">
+                    <div class="record-date">🕒 {date}</div>
+                    <div class="record-worry">Q. {worry}</div>
+                    <div class="record-answer">A. {answer}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                if st.button("❌ 이 기록 삭제", key=f"del_rec_{r_id}", use_container_width=True):
+                    c.execute("DELETE FROM counseling_records WHERE id=?", (r_id,))
+                    conn.commit()
+                    st.rerun()
+                st.markdown("<hr style='border-color: rgba(255,255,255,0.05);'>", unsafe_allow_html=True)
 
     # ------------------------------------------
     # [탭 3] 스트레스 지수 분석
     # ------------------------------------------
     with tab3:
-        st.markdown("### 📋 직무 스트레스 자가진단 (KOSHA 기반)")
+        st.markdown("### 📋 직무 스트레스 자가진단")
         st.markdown("최근 1개월 동안 직장에서 느낀 감정이나 생각에 대해 가장 잘 맞는 것을 선택해 주세요.")
         
         questions = [
@@ -426,9 +442,9 @@ else:
                     color = "#f87171"
                     
                 st.markdown(f"""
-                <div style="background: rgba(255,255,255,0.05); border: 2px solid {color}; border-radius: 15px; padding: 30px; text-align: center;">
-                    <h2 style="color: {color}; margin-bottom: 10px;">총점: {total_score}점 / 100점</h2>
-                    <p style="font-size: 20px; color: #ffffff;">{result_text}</p>
+                <div style="background: rgba(255,255,255,0.05); border: 2px solid {color}; border-radius: 15px; padding: 20px; text-align: center;">
+                    <h3 style="color: {color}; margin-bottom: 10px;">총점: {total_score}점 / 100점</h3>
+                    <p style="font-size: 16px; color: #ffffff;">{result_text}</p>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -437,10 +453,9 @@ else:
     # ------------------------------------------
     with tab4:
         st.markdown("### 🌙 깊은 수면과 휴식을 위한 사운드")
-        sound_choice = st.radio(
+        sound_choice = st.selectbox(
             "듣고 싶은 테마를 선택하세요:", 
-            ["🔥 장작 타는 소리", "🌧️ 차분해지는 빗소리", "🎵 432Hz 심신 안정 주파수", "🌊 잔잔한 파도 소리", "🌲 숲 속 새소리", "🎹 잔잔한 피아노", "☕ 백색소음 (카페)"], 
-            horizontal=True
+            ["🔥 장작 타는 소리", "🌧️ 차분해지는 빗소리", "🎵 432Hz 심신 안정 주파수", "🌊 잔잔한 파도 소리", "🌲 숲 속 새소리", "🎹 잔잔한 피아노", "☕ 백색소음 (카페)"]
         )
         st.markdown("<hr style='border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
         
@@ -458,12 +473,17 @@ else:
     with tab5:
         st.markdown("### 🎮 스트레스 타파 미니게임")
         
-        st.markdown("#### 🧊 분노의 얼음 깨기 (얼음 속에 가두고 싶은 스트레스를 각각 적어주세요)")
-        col_i1, col_i2, col_i3, col_i4 = st.columns(4)
-        with col_i1: ice1 = st.text_input("첫 번째 얼음", value="월요병")
-        with col_i2: ice2 = st.text_input("두 번째 얼음", value="실적 압박")
-        with col_i3: ice3 = st.text_input("세 번째 얼음", value="인간관계")
-        with col_i4: ice4 = st.text_input("네 번째 얼음", value="야근")
+        st.markdown("#### 🧊 분노의 얼음 깨기")
+        st.caption("얼음 속에 가두고 싶은 스트레스를 적어주세요.")
+        
+        # 모바일에서는 2개씩 2줄로 배치
+        col_i1, col_i2 = st.columns(2)
+        with col_i1: 
+            ice1 = st.text_input("첫 번째", value="월요병")
+            ice3 = st.text_input("세 번째", value="인간관계")
+        with col_i2: 
+            ice2 = st.text_input("두 번째", value="실적 압박")
+            ice4 = st.text_input("네 번째", value="야근")
         
         auto_score = st.text_input("auto_score_input_hidden_123", key="auto_score_input")
         auto_submit = st.button("auto_score_submit_hidden_123", key="auto_submit_btn")
@@ -487,72 +507,62 @@ else:
                 src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/SeoulNamsanM.woff') format('woff');
                 font-weight: normal; font-style: normal;
             }}
-            body {{ font-family: 'SeoulNamsan', sans-serif; color: white; margin: 0; padding: 10px; background: transparent; user-select: none; }}
-            h4 {{ color: #c084fc; margin-bottom: 15px; font-size: 20px; font-weight: bold; text-align: center; }}
+            body {{ font-family: 'SeoulNamsan', sans-serif; color: white; margin: 0; padding: 5px; background: transparent; user-select: none; touch-action: manipulation; }}
+            h4 {{ color: #c084fc; margin-bottom: 15px; font-size: 18px; font-weight: bold; text-align: center; }}
             
-            .ice-container {{ display: flex; justify-content: center; gap: 20px; margin-bottom: 50px; flex-wrap: wrap; }}
+            .ice-container {{ display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }}
             .ice-block {{
-                width: 130px; height: 130px;
+                width: 100px; height: 100px;
                 background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(165,243,252,0.6) 100%);
                 border: 2px solid rgba(255,255,255,0.8); border-radius: 15px;
-                box-shadow: 0 10px 20px rgba(0,0,0,0.3), inset 0 0 20px rgba(255,255,255,0.5);
+                box-shadow: 0 5px 10px rgba(0,0,0,0.3), inset 0 0 10px rgba(255,255,255,0.5);
                 display: flex; justify-content: center; align-items: center; text-align: center;
-                font-size: 18px; font-weight: 900; color: #083344;
+                font-size: 14px; font-weight: 900; color: #083344;
                 cursor: pointer; transition: all 0.1s; backdrop-filter: blur(5px);
-                background-size: cover; background-position: center;
+                background-size: cover; background-position: center; word-break: keep-all; padding: 5px;
             }}
             .ice-block:active {{ transform: scale(0.95); }}
             .shattered {{ background: transparent !important; border: none !important; box-shadow: none !important; color: transparent !important; pointer-events: none; }}
-            .shattered::after {{ content: '💥'; font-size: 60px; color: white; display: block; animation: fadeOut 1s forwards; }}
+            .shattered::after {{ content: '💥'; font-size: 40px; color: white; display: block; animation: fadeOut 1s forwards; }}
             
-            /* 시각적 타격감 (화면 흔들림 효과) */
             @keyframes shake {{
                 0% {{ transform: translate(1px, 1px) rotate(0deg); }}
-                10% {{ transform: translate(-2px, -3px) rotate(-2deg); }}
-                20% {{ transform: translate(-4px, 0px) rotate(2deg); }}
-                30% {{ transform: translate(4px, 3px) rotate(0deg); }}
+                20% {{ transform: translate(-2px, 0px) rotate(2deg); }}
                 40% {{ transform: translate(2px, -2px) rotate(2deg); }}
-                50% {{ transform: translate(-2px, 3px) rotate(-2deg); }}
-                60% {{ transform: translate(-4px, 2px) rotate(0deg); }}
-                70% {{ transform: translate(4px, 2px) rotate(-2deg); }}
-                80% {{ transform: translate(-2px, -2px) rotate(2deg); }}
-                90% {{ transform: translate(2px, 3px) rotate(0deg); }}
-                100% {{ transform: translate(1px, -3px) rotate(-2deg); }}
+                60% {{ transform: translate(-2px, 2px) rotate(0deg); }}
+                80% {{ transform: translate(-1px, -1px) rotate(2deg); }}
+                100% {{ transform: translate(1px, -2px) rotate(-2deg); }}
             }}
-            .shake {{
-                animation: shake 0.25s;
-                animation-iteration-count: 1;
-            }}
+            .shake {{ animation: shake 0.25s; animation-iteration-count: 1; }}
             
             .ant-game-area {{ 
-                position: relative; width: 100%; height: 500px; 
+                position: relative; width: 100%; height: 400px; 
                 background: radial-gradient(circle, #5c4033 0%, #27160a 100%); 
-                border-radius: 20px; overflow: hidden; 
-                border: 2px solid #8b5a2b; box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
-                cursor: crosshair;
+                border-radius: 15px; overflow: hidden; 
+                border: 2px solid #8b5a2b; box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
             }}
             #bread {{
                 position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                font-size: 130px; transition: transform 0.2s; z-index: 10;
+                font-size: 80px; transition: transform 0.2s; z-index: 10;
             }}
             .ant {{ 
-                position: absolute; font-size: 35px; cursor: pointer; 
+                position: absolute; font-size: 30px; cursor: pointer; 
                 transition: transform 0.1s linear; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.8)); z-index: 20;
             }}
             .screen-crack {{
-                position: absolute; font-size: 80px; z-index: 30;
+                position: absolute; font-size: 50px; z-index: 30;
                 animation: fadeOut 0.8s forwards; pointer-events: none; transform: translate(-50%, -50%);
             }}
             @keyframes fadeOut {{ 0% {{ opacity: 1; transform: scale(1) translate(-50%, -50%); }} 100% {{ opacity: 0; transform: scale(1.5) translate(-50%, -50%); }} }}
             
-            .btn {{ font-family: 'SeoulNamsan', sans-serif; background: linear-gradient(45deg, #c084fc, #fbcfe8); color: #1e1b4b; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 900; cursor: pointer; margin-bottom: 15px; font-size: 18px; box-shadow: 0 4px 15px rgba(192, 132, 252, 0.4); transition: transform 0.1s; display: block; margin: 0 auto 20px auto; }}
+            .btn {{ font-family: 'SeoulNamsan', sans-serif; background: linear-gradient(45deg, #c084fc, #fbcfe8); color: #1e1b4b; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 900; cursor: pointer; margin-bottom: 15px; font-size: 16px; box-shadow: 0 4px 10px rgba(192, 132, 252, 0.4); transition: transform 0.1s; display: block; margin: 0 auto 20px auto; width: 80%; }}
             .btn:active {{ transform: scale(0.95); }}
             
-            #hud {{ display: flex; justify-content: space-between; padding: 10px 20px; font-size: 22px; font-weight: bold; color: #fbcfe8; background: rgba(0,0,0,0.5); border-radius: 15px 15px 0 0; }}
-            #gameOverScreen {{ display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; flex-direction: column; justify-content: center; align-items: center; color: white; }}
-            #gameOverScreen h1 {{ color: #f87171; font-size: 50px; margin-bottom: 10px; }}
-            #gameOverScreen p {{ font-size: 30px; color: #fbcfe8; margin-bottom: 20px; }}
-            #autoSubmitMsg {{ font-size: 18px; color: #4ade80; margin-bottom: 30px; font-weight: bold; }}
+            #hud {{ display: flex; justify-content: space-between; padding: 10px 15px; font-size: 16px; font-weight: bold; color: #fbcfe8; background: rgba(0,0,0,0.5); border-radius: 15px 15px 0 0; }}
+            #gameOverScreen {{ display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; padding: 20px; box-sizing: border-box; }}
+            #gameOverScreen h1 {{ color: #f87171; font-size: 35px; margin-bottom: 10px; }}
+            #gameOverScreen p {{ font-size: 20px; color: #fbcfe8; margin-bottom: 20px; }}
+            #autoSubmitMsg {{ font-size: 14px; color: #4ade80; margin-bottom: 20px; font-weight: bold; word-break: keep-all; }}
         </style>
         </head>
         <body>
@@ -564,14 +574,14 @@ else:
             <div class="ice-block" onclick="breakIce(this)" data-hits="0"><span>{ice4}</span></div>
         </div>
 
-        <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+        <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
 
-        <h4>🍞 내 식빵 지키기 (개미를 터치해 식빵을 지키세요!)</h4>
+        <h4>🍞 내 식빵 지키기 (터치!)</h4>
         <button class="btn" id="startBtn" onclick="startGame()">🚀 게임 시작</button>
         
         <div class="ant-game-area" id="antContainer">
             <div id="hud">
-                <span id="levelDisplay">Level: 1</span>
+                <span id="levelDisplay">Lv: 1</span>
                 <span id="scoreDisplay">Score: 0</span>
             </div>
             <div id="bread">🍞</div>
@@ -580,7 +590,7 @@ else:
                 <h1>GAME OVER</h1>
                 <p id="finalScoreText">최종 점수: 0</p>
                 <div id="autoSubmitMsg"></div>
-                <button class="btn" onclick="location.reload()" style="margin-top: 20px;">다시 하기</button>
+                <button class="btn" onclick="location.reload()" style="margin-top: 10px;">다시 하기</button>
             </div>
         </div>
 
@@ -671,7 +681,7 @@ else:
 
             function updateHUD() {{
                 document.getElementById('scoreDisplay').innerText = `Score: ${{score}}`;
-                document.getElementById('levelDisplay').innerText = `Level: ${{level}}`;
+                document.getElementById('levelDisplay').innerText = `Lv: ${{level}}`;
             }}
 
             function spawnAnt() {{
@@ -722,7 +732,7 @@ else:
                     let dx = targetX - currentX; let dy = targetY - currentY;
                     let distance = Math.sqrt(dx*dx + dy*dy);
                     
-                    if(distance < 60) {{ 
+                    if(distance < 40) {{ 
                         playSound(eatSound);
                         breadScale -= 0.15; 
                         if(breadScale <= 0.2) {{
@@ -790,13 +800,13 @@ else:
         </body>
         </html>
         """
-        components.html(game_html, height=950, scrolling=False)
+        components.html(game_html, height=700, scrolling=False)
 
         # ------------------------------------------
         # 🏆 명예의 전당 (랭킹 시스템)
         # ------------------------------------------
-        st.markdown("<hr style='border-color: rgba(255,255,255,0.1); margin: 40px 0;'>", unsafe_allow_html=True)
-        st.markdown("### 🏆 식빵 수호대 명예의 전당 (Top 5)")
+        st.markdown("<hr style='border-color: rgba(255,255,255,0.1); margin: 30px 0;'>", unsafe_allow_html=True)
+        st.markdown("### 🏆 식빵 수호대 명예의 전당")
         
         c.execute("SELECT user_id, MAX(score) as max_score FROM game_scores GROUP BY user_id ORDER BY max_score DESC LIMIT 5")
         rankings = c.fetchall()
@@ -823,12 +833,11 @@ else:
     # ------------------------------------------
     with tab6:
         st.markdown("### 📅 나만의 소중한 일정 관리")
-        st.markdown("기념일, 자격증 시험, 휴가 등 기다려지는 날들을 기록해 보세요. 마음의 여유를 찾는 데 도움이 됩니다.")
+        st.markdown("기념일, 자격증 시험, 휴가 등 기다려지는 날들을 기록해 보세요.")
         
         st.write("")
-        col_title, col_date = st.columns(2)
-        with col_title: dday_title = st.text_input("일정 이름 (예: 여름휴가, 승진 시험)", key="dday_title")
-        with col_date: dday_date = st.date_input("날짜 선택", key="dday_date")
+        dday_title = st.text_input("일정 이름 (예: 여름휴가, 승진 시험)", key="dday_title")
+        dday_date = st.date_input("날짜 선택", key="dday_date")
             
         st.write("")
         if st.button("✨ D-day 추가하기", use_container_width=True):
@@ -856,32 +865,32 @@ else:
                 elif delta == 0: d_text, color = "D - Day 🎉", "#c084fc"
                 else: d_text, color = f"D + {-delta}", "#94a3b8"
                 
-                col_info, col_del = st.columns([5, 1])
-                with col_info:
-                    st.markdown(f"""
-                    <div style="background: rgba(255,255,255,0.05); border-left: 5px solid {color}; border-radius: 12px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                        <div><div style="color: #cbd5e1; font-size: 15px; margin-bottom: 5px;">{t_date_str}</div><div style="color: #ffffff; font-size: 22px; font-weight: bold;">{title}</div></div>
-                        <div style="color: {color}; font-size: 32px; font-weight: 900; text-shadow: 0 0 10px rgba(255,255,255,0.2);">{d_text}</div>
+                st.markdown(f"""
+                <div style="background: rgba(255,255,255,0.05); border-left: 5px solid {color}; border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                    <div>
+                        <div style="color: #cbd5e1; font-size: 13px; margin-bottom: 5px;">{t_date_str}</div>
+                        <div style="color: #ffffff; font-size: 18px; font-weight: bold;">{title}</div>
                     </div>
-                    """, unsafe_allow_html=True)
-                with col_del:
-                    st.write("")
-                    st.write("")
-                    if st.button("❌ 삭제", key=f"del_dday_{d_id}", use_container_width=True):
-                        c.execute("DELETE FROM dday_records WHERE id=?", (d_id,))
-                        conn.commit()
-                        st.rerun()
+                    <div style="color: {color}; font-size: 24px; font-weight: 900; text-shadow: 0 0 10px rgba(255,255,255,0.2);">{d_text}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                if st.button("❌ 삭제", key=f"del_dday_{d_id}", use_container_width=True):
+                    c.execute("DELETE FROM dday_records WHERE id=?", (d_id,))
+                    conn.commit()
+                    st.rerun()
+                st.write("")
 
 # ==========================================
 # [푸터] 면책 조항 (로그인 후 화면 하단)
 # ==========================================
 st.markdown("""
-<hr style="border-color: rgba(255,255,255,0.1); margin-top: 50px;">
-<div style="text-align: center; color: #94a3b8; font-size: 15px; line-height: 1.8;">
-    ⚠️ <b>본 '마음 상담소'의 답변은 AI에 의해 생성된 위로 메시지이며, 전문적인 의학적 진단이나 심리 치료를 대체할 수 없습니다.</b><br>
+<hr style="border-color: rgba(255,255,255,0.1); margin-top: 40px;">
+<div style="text-align: center; color: #94a3b8; font-size: 13px; line-height: 1.6; word-break: keep-all;">
+    ⚠️ <b>본 '마음 상담소'의 답변은 AI에 의해 생성된 위로 메시지이며, 전문적인 의학적 진단이나 심리 치료를 대체할 수 없습니다.</b><br><br>
     심각한 우울감이나 스트레스가 지속될 경우, <b>사내 심리상담센터(심즈업 심리상담 070-4192-7762)</b> 또는 전문 의료기관의 도움을 받으시길 권장합니다.
 </div>
-<div style="text-align: center; color: #64748b; font-size: 13px; margin-top: 20px;">
+<div style="text-align: center; color: #64748b; font-size: 11px; margin-top: 20px;">
     © POSCO FUTURE M Smart Mind Care Center. All rights reserved.
 </div>
 """, unsafe_allow_html=True)
