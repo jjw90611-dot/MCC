@@ -36,11 +36,10 @@ st.markdown("""
     @font-face {
         font-family: 'SeoulNamsan';
         src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/SeoulNamsanM.woff') format('woff');
-        font-weight: normal;
-        font-style: normal;
+        font-weight: normal; font-style: normal;
     }
 
-    /* Streamlit 전체 요소에 서울남산체 강제 적용 */
+    /* 전체 요소에 서울남산체 강제 적용 */
     .stApp, .stApp p, .stApp span, .stApp div, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6, .stApp label, .stApp input, .stApp textarea, .stApp button, .stApp table, .stApp th, .stApp td {
         font-family: 'SeoulNamsan', sans-serif !important;
     }
@@ -59,6 +58,9 @@ st.markdown("""
     }
     input, textarea { color: #ffffff !important; font-size: 18px !important; font-weight: bold !important; }
     label { color: #fbcfe8 !important; font-size: 18px !important; font-weight: bold !important; }
+
+    /* 라디오 버튼 텍스트 색상을 흰색으로 강제 변경 */
+    div[role="radiogroup"] label p { color: #ffffff !important; font-size: 17px !important; }
 
     div[data-testid="stButton"] > button, div[data-testid="stFormSubmitButton"] > button {
         background: linear-gradient(45deg, #4f46e5, #9333ea) !important; 
@@ -208,9 +210,18 @@ if not st.session_state['logged_in']:
 # [화면 구성] 2. 메인 서비스 화면
 # ==========================================
 else:
-    col_title, col_logout = st.columns([4, 1])
+    # 상단 헤더 (홈 화면으로 가기 버튼 추가)
+    col_title, col_home, col_logout = st.columns([3, 1, 1])
     with col_title:
         st.markdown(f"<div class='neon-title' style='text-align: left; font-size: 40px;'>{st.session_state['user_id']}님의 마음 상담소</div>", unsafe_allow_html=True)
+    with col_home:
+        st.write("") 
+        st.write("") 
+        if st.button("🏠 홈 화면으로", use_container_width=True):
+            st.session_state['logged_in'] = False
+            st.session_state['user_id'] = ""
+            st.session_state['chat_session'] = []
+            st.rerun()
     with col_logout:
         st.write("") 
         st.write("") 
@@ -371,23 +382,33 @@ else:
                 """, unsafe_allow_html=True)
 
     # ------------------------------------------
-    # [탭 4] 수면 & 힐링 사운드
+    # [탭 4] 수면 & 힐링 사운드 (링크 교체 및 추가)
     # ------------------------------------------
     with tab4:
         st.markdown("### 🌙 깊은 수면과 휴식을 위한 사운드")
-        sound_choice = st.radio("듣고 싶은 테마를 선택하세요:", ["🔥 장작 타는 소리", "🌧️ 차분해지는 빗소리", "🎵 432Hz 심신 안정 주파수", "🌊 잔잔한 파도 소리"], horizontal=True)
+        sound_choice = st.radio(
+            "듣고 싶은 테마를 선택하세요:", 
+            ["🔥 장작 타는 소리", "🌧️ 차분해지는 빗소리", "🎵 432Hz 심신 안정 주파수", "🌊 잔잔한 파도 소리", "🌲 숲 속 새소리", "🎹 잔잔한 피아노", "☕ 백색소음 (카페)"], 
+            horizontal=True
+        )
         st.markdown("<hr style='border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
         
-        if "장작" in sound_choice: st.video("https://www.youtube.com/watch?v=peB0qS5A-jY") 
+        if "장작" in sound_choice: st.video("https://www.youtube.com/watch?v=L_LUpnjgPso") 
         elif "빗소리" in sound_choice: st.video("https://www.youtube.com/watch?v=mPZkdNFkNps")
-        elif "주파수" in sound_choice: st.video("https://www.youtube.com/watch?v=8mAITcNlN7M") 
+        elif "주파수" in sound_choice: st.video("https://www.youtube.com/watch?v=77ZozI0rw7w") 
         elif "파도" in sound_choice: st.video("https://www.youtube.com/watch?v=bn9F19Hi1Lk")
+        elif "새소리" in sound_choice: st.video("https://www.youtube.com/watch?v=eKFTSSKCzWA")
+        elif "피아노" in sound_choice: st.video("https://www.youtube.com/watch?v=81SjIEKOUjE")
+        elif "카페" in sound_choice: st.video("https://www.youtube.com/watch?v=gaGrHUekGrc")
 
     # ------------------------------------------
     # [탭 5] 스트레스 타파 미니게임
     # ------------------------------------------
     with tab5:
         st.markdown("### 🎮 스트레스 타파 미니게임")
+        
+        # 얼음 속에 넣을 커스텀 텍스트 입력창
+        ice_text = st.text_input("🧊 얼음 속에 가두고 싶은 스트레스를 적어주세요 (예: 월요병, 실적 압박)", value="스트레스")
         
         game_html = f"""
         <!DOCTYPE html>
@@ -403,20 +424,23 @@ else:
             body {{ font-family: 'SeoulNamsan', sans-serif; color: white; margin: 0; padding: 10px; background: transparent; user-select: none; }}
             h4 {{ color: #c084fc; margin-bottom: 15px; font-size: 20px; font-weight: bold; }}
             
+            /* 얼음 깨기 스타일 */
             .ice-container {{ display: flex; justify-content: center; gap: 15px; margin-bottom: 50px; flex-wrap: wrap; }}
             .ice-block {{
                 width: 120px; height: 120px;
                 background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(165,243,252,0.6) 100%);
                 border: 2px solid rgba(255,255,255,0.8); border-radius: 15px;
                 box-shadow: 0 10px 20px rgba(0,0,0,0.3), inset 0 0 20px rgba(255,255,255,0.5);
-                display: flex; justify-content: center; align-items: center;
-                font-size: 20px; font-weight: 900; color: #083344;
+                display: flex; justify-content: center; align-items: center; text-align: center;
+                font-size: 18px; font-weight: 900; color: #083344;
                 cursor: pointer; transition: all 0.1s; backdrop-filter: blur(5px);
+                background-size: cover; background-position: center;
             }}
             .ice-block:active {{ transform: scale(0.95); }}
             .shattered {{ background: transparent !important; border: none !important; box-shadow: none !important; color: transparent !important; pointer-events: none; }}
             .shattered::after {{ content: '💥'; font-size: 60px; color: white; display: block; animation: fadeOut 1s forwards; }}
             
+            /* 개미 잡기 스타일 */
             .ant-game-area {{ 
                 position: relative; width: 100%; height: 450px; 
                 background: radial-gradient(circle, #5c4033 0%, #27160a 100%); 
@@ -426,7 +450,8 @@ else:
             }}
             #bread {{
                 position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                font-size: 80px; transition: transform 0.2s; z-index: 10;
+                font-size: 130px; /* 식빵 크기 1.5배 확대 */
+                transition: transform 0.2s; z-index: 10;
             }}
             .ant {{ 
                 position: absolute; font-size: 35px; cursor: pointer; 
@@ -444,17 +469,17 @@ else:
         </head>
         <body>
 
-        <h4>🧊 분노의 얼음 깨기 (클릭해서 박살내세요!)</h4>
+        <h4>🧊 분노의 얼음 깨기 (3번 클릭해서 박살내세요!)</h4>
         <div class="ice-container">
-            <div class="ice-block" onclick="breakIce(this)">스트레스</div>
-            <div class="ice-block" onclick="breakIce(this)">월요병</div>
-            <div class="ice-block" onclick="breakIce(this)">피로감</div>
-            <div class="ice-block" onclick="breakIce(this)">우울감</div>
+            <div class="ice-block" onclick="breakIce(this)" data-hits="0"><span>{ice_text}</span></div>
+            <div class="ice-block" onclick="breakIce(this)" data-hits="0"><span>{ice_text}</span></div>
+            <div class="ice-block" onclick="breakIce(this)" data-hits="0"><span>{ice_text}</span></div>
+            <div class="ice-block" onclick="breakIce(this)" data-hits="0"><span>{ice_text}</span></div>
         </div>
 
         <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
 
-        <h4>🍞 내 식빵 지키기 (개미를 터치해 화면을 깨버리세요!)</h4>
+        <h4>🍞 내 식빵 지키기 (개미를 터치해 식빵을 지키세요!)</h4>
         <button class="btn" onclick="spawnAnts(5)">+ 개미 5마리 소환</button>
         <div class="ant-game-area" id="antContainer">
             <div id="bread">🍞</div>
@@ -467,13 +492,31 @@ else:
 
             function playSound(url) {{ let audio = new Audio(url); audio.volume = 0.6; audio.play().catch(e => console.log("Audio blocked")); }}
 
+            // 얼음 깨기 3단 콤보 로직 (SVG로 리얼한 금가기 표현)
+            const crack1 = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M30,0 L45,30 L35,50 L60,80 L50,100" stroke="rgba(255,255,255,0.9)" stroke-width="3" fill="none"/></svg>')`;
+            const crack2 = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M30,0 L45,30 L35,50 L60,80 L50,100 M100,30 L70,45 L80,70 L40,90" stroke="rgba(255,255,255,1)" stroke-width="4" fill="none"/></svg>')`;
+
             function breakIce(el) {{
                 if(el.classList.contains('shattered')) return;
-                playSound(glassSound);
-                el.classList.add('shattered');
-                setTimeout(() => {{ el.style.display = 'none'; }}, 1000);
+                
+                let hits = parseInt(el.getAttribute('data-hits'));
+                hits++;
+                el.setAttribute('data-hits', hits);
+                
+                if(hits === 1) {{
+                    playSound(glassSound);
+                    el.style.backgroundImage = crack1 + ", linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(165,243,252,0.6) 100%)";
+                }} else if(hits === 2) {{
+                    playSound(glassSound);
+                    el.style.backgroundImage = crack2 + ", linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(165,243,252,0.6) 100%)";
+                }} else {{
+                    playSound(glassSound);
+                    el.classList.add('shattered');
+                    setTimeout(() => {{ el.style.display = 'none'; }}, 1000);
+                }}
             }}
 
+            // 개미 잡기 로직
             const antContainer = document.getElementById('antContainer');
             const bread = document.getElementById('bread');
             let breadScale = 1.0;
@@ -516,7 +559,7 @@ else:
                     let dx = targetX - currentX; let dy = targetY - currentY;
                     let distance = Math.sqrt(dx*dx + dy*dy);
                     
-                    if(distance < 40) {{
+                    if(distance < 60) {{ // 식빵이 커졌으므로 충돌 판정 거리도 늘림
                         playSound(eatSound);
                         breadScale -= 0.05;
                         if(breadScale < 0.2) breadScale = 0.2;
@@ -541,7 +584,7 @@ else:
         </body>
         </html>
         """
-        components.html(game_html, height=800, scrolling=False)
+        components.html(game_html, height=850, scrolling=False)
 
     # ------------------------------------------
     # [탭 6] D-day 일정 관리
