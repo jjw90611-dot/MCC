@@ -8,12 +8,12 @@ import requests
 import json
 
 # ==========================================
-# [초기 설정] 페이지 세팅
+# [초기 설정] 페이지 세팅 (PC에서 너무 퍼지지 않게 centered 적용)
 # ==========================================
-st.set_page_config(page_title="스마트 마음 상담 센터", page_icon="🌙", layout="wide")
+st.set_page_config(page_title="스마트 마음 상담 센터", page_icon="🌙", layout="centered")
 
 # ==========================================
-# [Groq API 키 설정] - 구글 대신 에러 없는 Groq 사용
+# [Groq API 키 설정]
 # ==========================================
 try:
     GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
@@ -44,7 +44,7 @@ GREETINGS = [
 ]
 
 # ==========================================
-# [CSS] 모바일 반응형 및 UI/UX 디자인 (표 디자인 수정 완료)
+# [CSS] PC & 모바일 반응형 완벽 분리 디자인
 # ==========================================
 st.markdown("""
 <style>
@@ -54,19 +54,13 @@ st.markdown("""
         font-weight: normal; font-style: normal;
     }
 
+    /* 공통 기본 디자인 */
     .stApp, .stApp p, .stApp span, .stApp div, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6, .stApp label, .stApp input, .stApp textarea, .stApp button, .stApp table, .stApp th, .stApp td {
         font-family: 'SeoulNamsan', sans-serif !important;
     }
-
     .stApp { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #f8fafc; }
     
-    .neon-title {
-        font-size: 55px; font-weight: 900; color: #ffffff; text-align: center;
-        margin-top: 20px; margin-bottom: 10px; letter-spacing: 2px; line-height: 1.2;
-        text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #c084fc, 0 0 40px #c084fc, 0 0 80px #c084fc, 0 0 90px #c084fc;
-    }
-    .sub-title { color: #e2e8f0; font-size: 20px; margin-bottom: 40px; font-weight: 500; text-align: center; word-break: keep-all; }
-    
+    /* 입력창 및 버튼 공통 디자인 */
     div[data-baseweb="input"] > div, div[data-baseweb="textarea"] > div {
         background-color: #1e293b !important; border: 2px solid #c084fc !important; border-radius: 10px !important;
     }
@@ -80,7 +74,11 @@ st.markdown("""
         border: none !important; border-radius: 12px !important;
         box-shadow: 0 4px 15px rgba(147, 51, 234, 0.5) !important; transition: all 0.3s ease !important;
     }
-    
+    div[data-testid="stButton"] > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
+        transform: translateY(-2px) !important; box-shadow: 0 6px 20px rgba(147, 51, 234, 0.7) !important;
+    }
+
+    /* 포스트잇 공통 */
     .post-it-container { display: flex; justify-content: center; gap: 20px; margin-bottom: 40px; flex-wrap: wrap; }
     .post-it {
         width: 180px; padding: 20px 15px; color: #1e293b; font-size: 16px; font-weight: 900; text-align: center; 
@@ -93,47 +91,51 @@ st.markdown("""
     .p1 { transform: rotate(-4deg); background: #fef08a; }
     .p2 { transform: rotate(3deg); background: #bbf7d0; }
     .p3 { transform: rotate(-3deg); background: #fbcfe8; }
-    
+
+    /* 탭 공통 */
     .stTabs [data-baseweb="tab-list"] { gap: 5px; justify-content: center; flex-wrap: wrap; }
     .stTabs [data-baseweb="tab"] { background-color: rgba(255,255,255,0.05); border-radius: 8px 8px 0 0; padding: 8px 12px; color: #cbd5e1; font-size: 15px; white-space: nowrap; }
     .stTabs [aria-selected="true"] { background-color: rgba(192, 132, 252, 0.2); color: #fbcfe8 !important; border-bottom: 3px solid #c084fc; font-weight: bold; }
 
-    .record-card { background: rgba(255,255,255,0.05); border-left: 5px solid #c084fc; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-    .record-date { color: #fbcfe8; font-size: 13px; font-weight: bold; margin-bottom: 8px; }
-    .record-worry { color: #ffffff; font-size: 16px; font-weight: 700; margin-bottom: 12px; line-height: 1.5; }
-    .record-answer { color: #e2e8f0; font-size: 15px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; line-height: 1.6; }
-    
+    /* 채팅 공통 */
     .chat-user { text-align: right; margin-bottom: 15px; }
     .chat-user span { background-color: #334155; padding: 10px 15px; border-radius: 20px 20px 0 20px; display: inline-block; font-size: 15px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-width: 85%; word-break: break-word; }
     .chat-ai { text-align: left; margin-bottom: 25px; }
     .chat-ai span { background-color: rgba(192, 132, 252, 0.15); border: 1px solid #c084fc; padding: 12px 15px; border-radius: 20px 20px 20px 0; display: inline-block; font-size: 15px; line-height: 1.6; box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-width: 90%; word-break: break-word; }
 
-    /* PC 화면에서 표가 예쁘게 가운데로 모이도록 수정된 부분 */
-    .table-container { display: flex; justify-content: center; overflow-x: auto; padding: 10px; }
+    /* 표 공통 */
+    .table-container { display: flex; justify-content: center; overflow-x: auto; padding: 10px; margin-bottom: 30px; }
     .counseling-table {
-        width: 100%; max-width: 850px; min-width: 500px; margin: 20px auto; border-collapse: collapse;
+        width: 100%; max-width: 800px; min-width: 500px; margin: 0 auto; border-collapse: collapse;
         background-color: rgba(255, 255, 255, 0.03); color: #e2e8f0; font-size: 15px;
         text-align: center; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
     .counseling-table th { background: linear-gradient(45deg, #3b82f6, #8b5cf6); color: #ffffff; padding: 12px; font-weight: 900; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 14px; white-space: nowrap; }
     .counseling-table td { padding: 12px; border: 1px solid rgba(255, 255, 255, 0.1); vertical-align: middle; line-height: 1.4; }
-    
-    .ranking-card { background: rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: bold; }
-    .rank-1 { border-left: 5px solid #fbbf24; color: #fbbf24; }
-    .rank-2 { border-left: 5px solid #94a3b8; color: #94a3b8; }
-    .rank-3 { border-left: 5px solid #b45309; color: #b45309; }
-    .rank-other { border-left: 5px solid #c084fc; color: #ffffff; }
 
+    /* ==========================================
+       [PC 전용 디자인] (화면이 넓을 때)
+       ========================================== */
+    @media (min-width: 769px) {
+        .neon-title {
+            font-size: 55px; font-weight: 900; color: #ffffff; text-align: center;
+            margin-top: 20px; margin-bottom: 10px; letter-spacing: 2px; line-height: 1.2;
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #c084fc, 0 0 40px #c084fc, 0 0 80px #c084fc;
+        }
+        .sub-title { color: #e2e8f0; font-size: 20px; margin-bottom: 40px; font-weight: 500; text-align: center; }
+        .chat-user span, .chat-ai span { font-size: 16px; padding: 15px 20px; }
+    }
+
+    /* ==========================================
+       [모바일 전용 디자인] (화면이 좁을 때)
+       ========================================== */
     @media (max-width: 768px) {
-        .neon-title { font-size: 38px !important; margin-top: 10px; }
-        .sub-title { font-size: 16px !important; margin-bottom: 20px; }
+        .neon-title { font-size: 38px !important; margin-top: 10px; text-shadow: 0 0 10px #c084fc, 0 0 20px #c084fc; }
+        .sub-title { font-size: 15px !important; margin-bottom: 20px; }
         .post-it { width: 45%; padding: 15px 10px; font-size: 14px; }
         .stTabs [data-baseweb="tab"] { font-size: 13px; padding: 6px 10px; }
-        .chat-user span, .chat-ai span { font-size: 14px; }
-        .record-worry { font-size: 15px; }
-        .record-answer { font-size: 14px; }
+        .chat-user span, .chat-ai span { font-size: 14px; padding: 10px 15px; }
         div[data-testid="stButton"] > button { font-size: 14px !important; padding: 8px 15px !important; }
-        .ranking-card { font-size: 14px; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -163,8 +165,10 @@ if not st.session_state['logged_in']:
     </div>
     """, unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 4, 1])
-    with col2:
+    # PC에서는 가운데로 모이고, 모바일에서는 꽉 차게 만드는 마법의 비율 [1, 2, 1]
+    col_empty1, col_login, col_empty2 = st.columns([1, 2, 1])
+    
+    with col_login:
         auth_tab1, auth_tab2 = st.tabs(["🔑 로그인", "📝 회원가입"])
         with auth_tab1:
             login_id = st.text_input("아이디를 입력하세요", key="login_id")
@@ -209,6 +213,8 @@ if not st.session_state['logged_in']:
                     st.success("회원가입이 완료되었습니다! 로그인 탭에서 로그인해주세요.")
                     st.session_state['id_checked'] = False
 
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
     st.markdown("""
     <div class="table-container">
         <table class="counseling-table">
@@ -292,7 +298,6 @@ else:
                 else:
                     with st.spinner("AI 심리상담사가 답변을 준비하고 있습니다..."):
                         try:
-                            # 대화 기록 구성
                             messages = [
                                 {"role": "system", "content": "당신은 직장인들의 마음을 치유해주는 따뜻하고 공감 능력이 뛰어난 전문 심리 상담사입니다. 내담자의 질문에 깊이 공감해주고 마음이 편안해질 수 있는 따뜻한 위로와 조언을 3~4문단으로 작성해주세요. 말투는 '~해요', '~습니다' 등 다정하고 존중하는 어투를 사용하세요. 한국어로만 대답하세요."}
                             ]
@@ -302,7 +307,6 @@ else:
                             
                             messages.append({"role": "user", "content": worry_input})
                             
-                            # Groq API 호출 (Llama 3 모델)
                             url = "https://api.groq.com/openai/v1/chat/completions"
                             headers = {
                                 "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -356,10 +360,10 @@ else:
             for record in records:
                 r_id, date, worry, answer = record
                 st.markdown(f"""
-                <div class="record-card">
-                    <div class="record-date">🕒 {date}</div>
-                    <div class="record-worry">Q. {worry}</div>
-                    <div class="record-answer">A. {answer}</div>
+                <div style="background: rgba(255,255,255,0.05); border-left: 5px solid #c084fc; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                    <div style="color: #fbcfe8; font-size: 13px; font-weight: bold; margin-bottom: 8px;">🕒 {date}</div>
+                    <div style="color: #ffffff; font-size: 16px; font-weight: 700; margin-bottom: 12px; line-height: 1.5;">Q. {worry}</div>
+                    <div style="color: #e2e8f0; font-size: 15px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; line-height: 1.6;">A. {answer}</div>
                 </div>
                 """, unsafe_allow_html=True)
                 if st.button("❌ 이 기록 삭제", key=f"del_rec_{r_id}", use_container_width=True):
@@ -797,7 +801,7 @@ else:
                 else: rank_class, icon = "rank-other", f"{i+1}위"
                 
                 st.markdown(f"""
-                <div class="ranking-card {rank_class}">
+                <div style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: bold; border-left: 5px solid {'#fbbf24' if i==0 else '#94a3b8' if i==1 else '#b45309' if i==2 else '#c084fc'}; color: {'#fbbf24' if i==0 else '#94a3b8' if i==1 else '#b45309' if i==2 else '#ffffff'};">
                     <div>{icon} {r_user}님</div>
                     <div>{r_score} 점</div>
                 </div>
