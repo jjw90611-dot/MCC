@@ -185,7 +185,7 @@ if not st.session_state['logged_in']:
                     st.session_state['logged_in'] = True
                     st.session_state['user_id'] = login_id
                     st.session_state['chat_session'] = [] 
-                    st.session_state['greeting_msg'] = random.choice(GREETINGS) # 로그인 시 새로운 인사말 배정
+                    st.session_state['greeting_msg'] = random.choice(GREETINGS) 
                     st.rerun()
                 else:
                     st.error("아이디 또는 비밀번호가 일치하지 않습니다.")
@@ -271,7 +271,7 @@ else:
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["💬 AI 마음 상담", "📚 나의 기록", "📊 스트레스 분석", "🌙 수면 사운드", "🎮 스트레스 타파", "📅 D-day 관리"])
 
     # ------------------------------------------
-    # [탭 1] AI 마음 상담 (감성 아이스브레이킹 적용)
+    # [탭 1] AI 마음 상담
     # ------------------------------------------
     with tab1:
         col_t1, col_t2 = st.columns([4, 1])
@@ -279,10 +279,9 @@ else:
         with col_t2:
             if st.button("🔄 새 상담 시작 (초기화)", use_container_width=True):
                 st.session_state['chat_session'] = []
-                st.session_state['greeting_msg'] = random.choice(GREETINGS) # 초기화 시 새로운 인사말 배정
+                st.session_state['greeting_msg'] = random.choice(GREETINGS) 
                 st.rerun()
 
-        # 대화 기록이 없을 때, 상담사가 먼저 말을 거는 형태의 UI 출력
         if not st.session_state['chat_session']:
             st.markdown(f"""
             <div class='chat-ai'>
@@ -436,7 +435,7 @@ else:
         )
         st.markdown("<hr style='border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
         
-        if "장작" in sound_choice: st.video("https://youtu.be/Bb0d96fC7bc?si=fCRya1_Kyc9rhIh3") 
+        if "장작" in sound_choice: st.video("https://www.youtube.com/watch?v=3_cE2_Mh2L0") 
         elif "빗소리" in sound_choice: st.video("https://www.youtube.com/watch?v=mPZkdNFkNps")
         elif "주파수" in sound_choice: st.video("https://www.youtube.com/watch?v=1ZYbU82GVz4") 
         elif "파도" in sound_choice: st.video("https://www.youtube.com/watch?v=bn9F19Hi1Lk")
@@ -445,7 +444,7 @@ else:
         elif "카페" in sound_choice: st.video("https://www.youtube.com/watch?v=gaGrHUekGrc")
 
     # ------------------------------------------
-    # [탭 5] 스트레스 타파 미니게임
+    # [탭 5] 스트레스 타파 미니게임 (극강의 타격감 적용)
     # ------------------------------------------
     with tab5:
         st.markdown("### 🎮 스트레스 타파 미니게임")
@@ -496,6 +495,25 @@ else:
             .ice-block:active {{ transform: scale(0.95); }}
             .shattered {{ background: transparent !important; border: none !important; box-shadow: none !important; color: transparent !important; pointer-events: none; }}
             .shattered::after {{ content: '💥'; font-size: 60px; color: white; display: block; animation: fadeOut 1s forwards; }}
+            
+            /* 시각적 타격감 (화면 흔들림 효과) */
+            @keyframes shake {{
+                0% {{ transform: translate(1px, 1px) rotate(0deg); }}
+                10% {{ transform: translate(-2px, -3px) rotate(-2deg); }}
+                20% {{ transform: translate(-4px, 0px) rotate(2deg); }}
+                30% {{ transform: translate(4px, 3px) rotate(0deg); }}
+                40% {{ transform: translate(2px, -2px) rotate(2deg); }}
+                50% {{ transform: translate(-2px, 3px) rotate(-2deg); }}
+                60% {{ transform: translate(-4px, 2px) rotate(0deg); }}
+                70% {{ transform: translate(4px, 2px) rotate(-2deg); }}
+                80% {{ transform: translate(-2px, -2px) rotate(2deg); }}
+                90% {{ transform: translate(2px, 3px) rotate(0deg); }}
+                100% {{ transform: translate(1px, -3px) rotate(-2deg); }}
+            }}
+            .shake {{
+                animation: shake 0.25s;
+                animation-iteration-count: 1;
+            }}
             
             .ant-game-area {{ 
                 position: relative; width: 100%; height: 500px; 
@@ -578,29 +596,37 @@ else:
                 }} catch(e) {{ clearInterval(hideInterval); }}
             }}, 100);
 
-            const iceSound = 'https://assets.mixkit.co/active_storage/sfx/2676/2676-preview.mp3'; 
-            const squishSound = 'https://assets.mixkit.co/active_storage/sfx/2772/2772-preview.mp3'; 
+            // 극강의 타격감 사운드 (묵직한 퍽 소리 & 와장창 깨지는 소리)
+            const crackSound = 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'; // 묵직한 타격음
+            const smashSound = 'https://assets.mixkit.co/active_storage/sfx/2684/2684-preview.mp3'; // 와장창 박살나는 소리
+            const squishSound = 'https://assets.mixkit.co/active_storage/sfx/2772/2772-preview.mp3'; // 벌레 터지는 소리
             const eatSound = 'https://assets.mixkit.co/active_storage/sfx/2902/2902-preview.mp3';
 
-            function playSound(url) {{ let audio = new Audio(url); audio.volume = 0.7; audio.play().catch(e => console.log("Audio blocked")); }}
+            function playSound(url) {{ let audio = new Audio(url); audio.volume = 1.0; audio.play().catch(e => console.log("Audio blocked")); }}
 
             const crack1 = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M30,0 L45,30 L35,50 L60,80 L50,100" stroke="rgba(255,255,255,0.9)" stroke-width="3" fill="none"/></svg>')`;
             const crack2 = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M30,0 L45,30 L35,50 L60,80 L50,100 M100,30 L70,45 L80,70 L40,90" stroke="rgba(255,255,255,1)" stroke-width="4" fill="none"/></svg>')`;
 
             function breakIce(el) {{
                 if(el.classList.contains('shattered')) return;
+                
+                // 시각적 타격감 (흔들림 효과 강제 재시작)
+                el.classList.remove('shake');
+                void el.offsetWidth; 
+                el.classList.add('shake');
+
                 let hits = parseInt(el.getAttribute('data-hits'));
                 hits++;
                 el.setAttribute('data-hits', hits);
                 
                 if(hits === 1) {{
-                    playSound(iceSound);
+                    playSound(crackSound);
                     el.style.backgroundImage = crack1 + ", linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(165,243,252,0.6) 100%)";
                 }} else if(hits === 2) {{
-                    playSound(iceSound);
+                    playSound(crackSound);
                     el.style.backgroundImage = crack2 + ", linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(165,243,252,0.6) 100%)";
                 }} else {{
-                    playSound(iceSound);
+                    playSound(smashSound);
                     el.classList.add('shattered');
                     setTimeout(() => {{ el.style.display = 'none'; }}, 1000);
                 }}
