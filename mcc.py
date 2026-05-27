@@ -365,7 +365,7 @@ else:
                             data = {
                                 "model": "llama-3.3-70b-versatile",
                                 "messages": messages,
-                                "temperature": 0.1  # [수정됨] 창의성을 최저치로 낮춰 할루시네이션(외국어 튀어나옴) 원천 차단
+                                "temperature": 0.1
                             }
                             
                             response = requests.post(url, headers=headers, json=data)
@@ -373,14 +373,8 @@ else:
                             if response.status_code == 200:
                                 answer = response.json()['choices'][0]['message']['content']
                                 
-                                # ==========================================
-                                # [추가됨] 철통 방어: 정규표현식으로 모든 외국어 유니코드 강제 삭제
-                                # ==========================================
-                                # 한자, 러시아어(키릴), 그리스어, 일본어 유니코드 대역을 모두 찾아 삭제합니다.
                                 foreign_pattern = re.compile(r'[\u4e00-\u9fff\u3400-\u4dbf\u0400-\u04ff\u0500-\u052f\u0370-\u03ff\u1f00-\u1fff\u3040-\u309f\u30a0-\u30ff]')
                                 answer = foreign_pattern.sub('', answer)
-                                
-                                # 외국어가 지워지면서 남은 빈 괄호 찌꺼기 삭제
                                 answer = answer.replace('()', '').replace(' ( )', '').replace('[]', '').strip()
                                 
                                 now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -654,15 +648,23 @@ else:
                 }} catch(e) {{ clearInterval(hideInterval); }}
             }}, 100);
 
-            const crackSound = 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'; 
-            const smashSound = 'https://assets.mixkit.co/active_storage/sfx/2684/2684-preview.mp3'; 
-            const squishSound = 'https://assets.mixkit.co/active_storage/sfx/2772/2772-preview.mp3'; 
-            const eatSound = 'https://assets.mixkit.co/active_storage/sfx/2902/2902-preview.mp3';
+            // ==========================================
+            // [수정됨] 오디오 사전 로딩 (싱크로율 100% 해결)
+            // ==========================================
+            const audioCache = {{
+                crack: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'),
+                smash: new Audio('https://assets.mixkit.co/active_storage/sfx/2684/2684-preview.mp3'),
+                tak: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'), // 짧고 경쾌한 '탁(팝)' 소리로 변경
+                eat: new Audio('https://assets.mixkit.co/active_storage/sfx/2902/2902-preview.mp3')
+            }};
 
-            function playSound(url, vol) {{ 
-                let audio = new Audio(url); 
-                audio.volume = vol || 1.0; 
-                audio.play().catch(e => console.log("Audio blocked")); 
+            // cloneNode를 사용하여 딜레이 없이 즉시 재생
+            function playSound(type, vol) {{ 
+                try {{
+                    let audio = audioCache[type].cloneNode(); 
+                    audio.volume = vol || 1.0; 
+                    audio.play().catch(e => console.log("Audio blocked")); 
+                }} catch(e) {{}}
             }}
 
             const crack1 = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M30,0 L45,30 L35,50 L60,80 L50,100" stroke="rgba(255,255,255,0.9)" stroke-width="3" fill="none"/></svg>')`;
@@ -680,13 +682,13 @@ else:
                 el.setAttribute('data-hits', hits);
                 
                 if(hits === 1) {{
-                    playSound(crackSound, 0.5); 
+                    playSound('crack', 0.5); 
                     el.style.backgroundImage = crack1 + ", linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(165,243,252,0.6) 100%)";
                 }} else if(hits === 2) {{
-                    playSound(crackSound, 0.5);
+                    playSound('crack', 0.5);
                     el.style.backgroundImage = crack2 + ", linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(165,243,252,0.6) 100%)";
                 }} else {{
-                    playSound(smashSound, 0.6); 
+                    playSound('smash', 0.6); 
                     el.classList.add('shattered');
                     setTimeout(() => {{ el.style.display = 'none'; }}, 1000);
                 }}
@@ -745,7 +747,8 @@ else:
                 ant.addEventListener('pointerdown', function() {{
                     if(!gameActive) return;
                     
-                    playSound(squishSound, 0.25);
+                    // [수정됨] 경쾌한 '탁' 소리로 변경 및 볼륨을 15%로 더 축소
+                    playSound('tak', 0.15);
                     
                     score += 10;
                     if(score % 100 === 0) {{ 
@@ -777,7 +780,7 @@ else:
                     let distance = Math.sqrt(dx*dx + dy*dy);
                     
                     if(distance < 40) {{ 
-                        playSound(eatSound, 0.4); 
+                        playSound('eat', 0.4); 
                         breadScale -= 0.15; 
                         if(breadScale <= 0.2) {{
                             breadScale = 0;
