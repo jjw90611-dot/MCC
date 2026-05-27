@@ -15,44 +15,37 @@ st.set_page_config(page_title="스마트 마음 상담 센터", page_icon="🌙"
 # ==========================================
 GEMINI_API_KEY = "AIzaSyBOagoX1FvOaIVdyA2xeTqzERYGuunLR_Y"
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash') 
+model = genai.GenerativeModel('gemini-pro') 
 
 # ==========================================
 # [데이터베이스 설정] SQLite3
 # ==========================================
 conn = sqlite3.connect('mind_care_v2.db', check_same_thread=False)
 c = conn.cursor()
-c.execute('''
-    CREATE TABLE IF NOT EXISTS counseling_records (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id TEXT,
-        date TEXT,
-        worry TEXT,
-        answer TEXT
-    )
-''')
-c.execute('''
-    CREATE TABLE IF NOT EXISTS users (
-        user_id TEXT PRIMARY KEY,
-        password TEXT
-    )
-''')
-c.execute('''
-    CREATE TABLE IF NOT EXISTS dday_records (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id TEXT,
-        title TEXT,
-        target_date TEXT
-    )
-''')
+c.execute('''CREATE TABLE IF NOT EXISTS counseling_records (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, date TEXT, worry TEXT, answer TEXT)''')
+c.execute('''CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY, password TEXT)''')
+c.execute('''CREATE TABLE IF NOT EXISTS dday_records (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, title TEXT, target_date TEXT)''')
 conn.commit()
 
 # ==========================================
-# [CSS] 30년차 전문가의 UI/UX 디자인
+# [CSS] 서울남산체 웹 폰트 적용 및 UI/UX 디자인
 # ==========================================
 st.markdown("""
 <style>
-    .stApp { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #f8fafc; font-family: 'Pretendard', 'Segoe UI', sans-serif; }
+    /* 서울남산체 웹 폰트 불러오기 */
+    @font-face {
+        font-family: 'SeoulNamsan';
+        src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/SeoulNamsanM.woff') format('woff');
+        font-weight: normal;
+        font-style: normal;
+    }
+
+    /* Streamlit 전체 요소에 서울남산체 강제 적용 */
+    .stApp, .stApp p, .stApp span, .stApp div, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6, .stApp label, .stApp input, .stApp textarea, .stApp button, .stApp table, .stApp th, .stApp td {
+        font-family: 'SeoulNamsan', sans-serif !important;
+    }
+
+    .stApp { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #f8fafc; }
     
     .neon-title {
         font-size: 55px; font-weight: 900; color: #ffffff; text-align: center;
@@ -67,13 +60,16 @@ st.markdown("""
     input, textarea { color: #ffffff !important; font-size: 18px !important; font-weight: bold !important; }
     label { color: #fbcfe8 !important; font-size: 18px !important; font-weight: bold !important; }
 
-    div[data-testid="stButton"] > button {
-        background: linear-gradient(45deg, #c084fc, #fbcfe8) !important; color: #1e1b4b !important; 
+    div[data-testid="stButton"] > button, div[data-testid="stFormSubmitButton"] > button {
+        background: linear-gradient(45deg, #4f46e5, #9333ea) !important; 
+        color: #ffffff !important; 
         font-weight: 900 !important; font-size: 18px !important; padding: 10px 20px !important;
         border: none !important; border-radius: 12px !important;
-        box-shadow: 0 4px 15px rgba(192, 132, 252, 0.5) !important; transition: all 0.3s ease !important;
+        box-shadow: 0 4px 15px rgba(147, 51, 234, 0.5) !important; transition: all 0.3s ease !important;
     }
-    div[data-testid="stButton"] > button:hover { transform: translateY(-2px) !important; box-shadow: 0 6px 20px rgba(192, 132, 252, 0.8) !important; }
+    div[data-testid="stButton"] > button:hover, div[data-testid="stFormSubmitButton"] > button:hover { 
+        transform: translateY(-2px) !important; box-shadow: 0 6px 20px rgba(147, 51, 234, 0.8) !important; 
+    }
 
     .post-it-container { display: flex; justify-content: center; gap: 25px; margin-bottom: 50px; flex-wrap: wrap; }
     .post-it {
@@ -92,9 +88,7 @@ st.markdown("""
     .stTabs [data-baseweb="tab"] { background-color: rgba(255,255,255,0.05); border-radius: 8px 8px 0 0; padding: 10px 20px; color: #cbd5e1; font-size: 18px; }
     .stTabs [aria-selected="true"] { background-color: rgba(192, 132, 252, 0.2); color: #fbcfe8 !important; border-bottom: 3px solid #c084fc; font-weight: bold; }
 
-    .record-card {
-        background: rgba(255,255,255,0.05); border-left: 5px solid #c084fc; border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    }
+    .record-card { background: rgba(255,255,255,0.05); border-left: 5px solid #c084fc; border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
     .record-date { color: #fbcfe8; font-size: 14px; font-weight: bold; margin-bottom: 10px; }
     .record-worry { color: #ffffff; font-size: 18px; font-weight: 700; margin-bottom: 15px; line-height: 1.6; }
     .record-answer { color: #e2e8f0; font-size: 17px; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 10px; line-height: 1.7; }
@@ -104,19 +98,13 @@ st.markdown("""
     .chat-ai { text-align: left; margin-bottom: 25px; }
     .chat-ai span { background-color: rgba(192, 132, 252, 0.15); border: 1px solid #c084fc; padding: 15px 20px; border-radius: 20px 20px 20px 0; display: inline-block; font-size: 17px; line-height: 1.7; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
-    /* 사내상담센터 표 스타일 */
     .counseling-table {
-        width: 100%; max-width: 900px; margin: 30px auto; border-collapse: collapse;
+        width: 100%; max-width: 900px; margin: 50px auto; border-collapse: collapse;
         background-color: rgba(255, 255, 255, 0.03); color: #e2e8f0; font-size: 15px;
         text-align: center; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
-    .counseling-table th {
-        background: linear-gradient(45deg, #3b82f6, #8b5cf6); color: #ffffff;
-        padding: 15px; font-weight: 900; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 16px;
-    }
-    .counseling-table td {
-        padding: 15px; border: 1px solid rgba(255, 255, 255, 0.1); vertical-align: middle; line-height: 1.5;
-    }
+    .counseling-table th { background: linear-gradient(45deg, #3b82f6, #8b5cf6); color: #ffffff; padding: 15px; font-weight: 900; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 16px; }
+    .counseling-table td { padding: 15px; border: 1px solid rgba(255, 255, 255, 0.1); vertical-align: middle; line-height: 1.5; }
     .counseling-table tr:hover { background-color: rgba(255, 255, 255, 0.08); }
 </style>
 """, unsafe_allow_html=True)
@@ -147,9 +135,7 @@ if not st.session_state['logged_in']:
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # 불필요한 둥근 원(auth-box) 렌더링 오류 제거 완료
         auth_tab1, auth_tab2 = st.tabs(["🔑 로그인", "📝 회원가입"])
-        
         with auth_tab1:
             login_id = st.text_input("아이디를 입력하세요", key="login_id")
             login_pw = st.text_input("비밀번호를 입력하세요", type="password", key="login_pw")
@@ -192,6 +178,32 @@ if not st.session_state['logged_in']:
                     st.success("회원가입이 완료되었습니다! 로그인 탭에서 로그인해주세요.")
                     st.session_state['id_checked'] = False
 
+    st.markdown("""
+    <table class="counseling-table">
+        <thead>
+            <tr><th>지역</th><th>근무지</th><th>장소</th><th>상담사명</th><th>운영시간</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td rowspan="4" style="font-weight: bold; color: #fbcfe8;">포항</td>
+                <td>포항본사</td><td rowspan="2">늘푸른솔커뮤니티센터<br>1층 회의실</td><td rowspan="2">윤영임</td><td rowspan="2">매주 화, 격주 목<br>09:00~18:00</td>
+            </tr>
+            <tr><td>포항사업실</td></tr>
+            <tr><td>포항양극재</td><td>신사무동 4층 상담실</td><td rowspan="2">김진아</td><td>매주 월<br>09:00~18:00</td></tr>
+            <tr><td>포항음극재</td><td>사무동 1층 보건실</td><td>격주 목<br>09:00~18:00</td></tr>
+            <tr>
+                <td rowspan="2" style="font-weight: bold; color: #fbcfe8;">광양</td>
+                <td>광양사업실</td><td>태인동 사무소<br>3층 마음쉼터</td><td>박정숙</td><td>매주 수<br>09:00~18:00</td>
+            </tr>
+            <tr><td>광양양극재</td><td>창의동 2층<br>건강관리실 內 고충상담실</td><td>이혜주</td><td>매주 화<br>09:00~18:00</td></tr>
+            <tr>
+                <td style="font-weight: bold; color: #fbcfe8;">세종</td>
+                <td>세종음극재</td><td>2공장 복지동<br>2층 혼창통</td><td>김유진</td><td>매주 화<br>10:00~19:00</td>
+            </tr>
+        </tbody>
+    </table>
+    """, unsafe_allow_html=True)
+
 # ==========================================
 # [화면 구성] 2. 메인 서비스 화면
 # ==========================================
@@ -230,7 +242,7 @@ else:
 
         with st.form("chat_form", clear_on_submit=True):
             worry_input = st.text_area("고민이나 추가 질문을 자유롭게 적어주세요.", height=100)
-            submitted = st.form_submit_button("✨ AI 상담사에게 전송 ✨", use_container_width=True)
+            submitted = st.form_submit_button("상담사에게 전송", use_container_width=True)
             
             if submitted:
                 if worry_input.strip() == "": st.warning("내용을 조금이라도 적어주세요.")
@@ -306,20 +318,57 @@ else:
     # [탭 3] 스트레스 지수 분석
     # ------------------------------------------
     with tab3:
-        st.markdown("### 🧠 직무 스트레스 자가 진단")
-        st.markdown("스트레스 지수($S$)는 업무량($W$), 대인관계 난이도($R$), 그리고 휴식 시간($B$)에 의해 결정됩니다.")
+        st.markdown("### 📋 직무 스트레스 자가진단 (KOSHA 기반)")
+        st.markdown("최근 1개월 동안 직장에서 느낀 감정이나 생각에 대해 가장 잘 맞는 것을 선택해 주세요.")
         
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        st.latex(r"S = \left( \frac{W \times 1.5 + R^2}{B + 1} \right) \times 10")
-        st.markdown("<br><br>", unsafe_allow_html=True)
-
-        col_w, col_r, col_b = st.columns(3)
-        with col_w: w_val = st.number_input("주간 초과 근무 시간 (W)", min_value=0, max_value=52, value=5)
-        with col_r: r_val = st.slider("대인관계 스트레스 (R)", 1, 5, 3)
-        with col_b: b_val = st.number_input("하루 평균 휴식 시간 (B)", min_value=0, max_value=10, value=2)
+        questions = [
+            "1. 업무량이 너무 많아 항상 시간에 쫓긴다.", "2. 내 업무의 책임 한계가 불명확하다.",
+            "3. 업무를 수행하기 위해 높은 수준의 집중력이 요구된다.", "4. 상사나 동료와 의견 충돌이 잦다.",
+            "5. 내 직무에 대한 권한이나 자율성이 부족하다.", "6. 업무 결과에 대해 정당한 평가를 받지 못한다.",
+            "7. 직장 내에서 소외감을 느끼거나 외롭다.", "8. 고용 불안정(구조조정 등)을 느낀다.",
+            "9. 업무 환경(소음, 조명, 환기 등)이 불편하다.", "10. 퇴근 후에도 업무에 대한 걱정을 계속 한다.",
+            "11. 내 능력에 비해 너무 어려운 업무가 주어진다.", "12. 타 부서와의 협조가 원활하게 이루어지지 않는다.",
+            "13. 회사의 장래가 불투명하다고 느낀다.", "14. 업무로 인해 개인 생활(가족, 여가)에 지장을 받는다.",
+            "15. 직장에서 감정 노동(감정 숨기기 등)을 강요받는다.", "16. 상사의 지시가 일관성이 없어 혼란스럽다.",
+            "17. 직무 수행에 필요한 지원이나 자원이 부족하다.", "18. 승진이나 보상 체계가 불공정하다고 느낀다.",
+            "19. 직장 내 괴롭힘이나 부당한 대우를 경험한 적이 있다.", "20. 현재의 직무가 내 적성이나 경력 개발에 도움이 되지 않는다."
+        ]
         
-        s_score = ((w_val * 1.5 + r_val**2) / (b_val + 1)) * 10
-        st.markdown(f"#### 📊 당신의 현재 예상 스트레스 지수: **<span style='color:#fbcfe8; font-size: 28px;'>{s_score:.1f}점</span>**", unsafe_allow_html=True)
+        options = ["전혀 그렇지 않다 (1점)", "그렇지 않다 (2점)", "보통이다 (3점)", "그렇다 (4점)", "매우 그렇다 (5점)"]
+        
+        with st.form("stress_test_form"):
+            scores = []
+            for q in questions:
+                st.markdown(f"**{q}**")
+                choice = st.radio("선택", options, horizontal=True, key=q, label_visibility="collapsed")
+                scores.append(options.index(choice) + 1)
+                st.markdown("<hr style='margin: 10px 0; border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
+            
+            submitted_test = st.form_submit_button("📊 진단 결과 확인하기", use_container_width=True)
+            
+            if submitted_test:
+                total_score = sum(scores)
+                st.markdown("### 💡 자가진단 결과")
+                
+                if total_score <= 40:
+                    result_text = "🟢 **양호한 상태입니다.** 현재 스트레스를 잘 관리하고 계십니다."
+                    color = "#4ade80"
+                elif total_score <= 60:
+                    result_text = "🟡 **보통 수준입니다.** 가벼운 스트레스가 있으니 충분한 휴식이 필요합니다."
+                    color = "#facc15"
+                elif total_score <= 80:
+                    result_text = "🟠 **심한 스트레스 상태입니다.** 업무 조율과 적극적인 스트레스 관리가 필요합니다."
+                    color = "#fb923c"
+                else:
+                    result_text = "🔴 **위험 수준입니다.** 번아웃이 우려되니 사내 심리상담센터의 도움을 꼭 받아보시길 권장합니다."
+                    color = "#f87171"
+                    
+                st.markdown(f"""
+                <div style="background: rgba(255,255,255,0.05); border: 2px solid {color}; border-radius: 15px; padding: 30px; text-align: center;">
+                    <h2 style="color: {color}; margin-bottom: 10px;">총점: {total_score}점 / 100점</h2>
+                    <p style="font-size: 20px; color: #ffffff;">{result_text}</p>
+                </div>
+                """, unsafe_allow_html=True)
 
     # ------------------------------------------
     # [탭 4] 수면 & 힐링 사운드
@@ -339,7 +388,6 @@ else:
     # ------------------------------------------
     with tab5:
         st.markdown("### 🎮 스트레스 타파 미니게임")
-        target_name = st.text_input("⌨️ 미운 사람의 이름이나 스트레스 원인을 적어보세요 (예: 월요병, 부장님)", value="스트레스")
         
         game_html = f"""
         <!DOCTYPE html>
@@ -347,57 +395,148 @@ else:
         <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <style>
-            body {{ font-family: 'Segoe UI', sans-serif; color: white; margin: 0; padding: 10px; background: transparent; user-select: none; }}
+            @font-face {{
+                font-family: 'SeoulNamsan';
+                src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/SeoulNamsanM.woff') format('woff');
+                font-weight: normal; font-style: normal;
+            }}
+            body {{ font-family: 'SeoulNamsan', sans-serif; color: white; margin: 0; padding: 10px; background: transparent; user-select: none; }}
             h4 {{ color: #c084fc; margin-bottom: 15px; font-size: 20px; font-weight: bold; }}
-            .keyboard-container {{ display: flex; justify-content: center; margin-bottom: 50px; padding: 20px; }}
-            .keycap {{ width: 150px; height: 150px; background: #1e1e24; border-radius: 16px; box-shadow: 0 12px 0 #0a0a0c, 0 20px 25px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,255,0.1); display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: 900; color: #00f2fe; cursor: pointer; transition: all 0.05s; text-shadow: 0 0 10px rgba(0, 242, 254, 0.8); border: 1px solid #333; }}
-            .keycap:active {{ box-shadow: 0 2px 0 #0a0a0c, 0 5px 10px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,255,0.1); transform: translateY(10px); color: #f43f5e; text-shadow: 0 0 15px rgba(244, 63, 94, 0.9); }}
-            .ant-game-area {{ position: relative; width: 100%; height: 400px; background: radial-gradient(circle at center, #1e293b, #020617); border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 0 50px rgba(0,0,0,0.8); cursor: crosshair; }}
-            .ant {{ position: absolute; font-size: 40px; cursor: pointer; transition: transform 0.3s ease-out; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5)); }}
-            .splat {{ position: absolute; font-size: 45px; animation: fadeOut 1s forwards; pointer-events: none; }}
-            @keyframes fadeOut {{ 0% {{ opacity: 1; transform: scale(1); }} 100% {{ opacity: 0; transform: scale(2); }} }}
-            .btn {{ background: linear-gradient(45deg, #c084fc, #fbcfe8); color: #1e1b4b; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 900; cursor: pointer; margin-bottom: 15px; font-size: 18px; box-shadow: 0 4px 15px rgba(192, 132, 252, 0.4); transition: transform 0.1s; }}
+            
+            .ice-container {{ display: flex; justify-content: center; gap: 15px; margin-bottom: 50px; flex-wrap: wrap; }}
+            .ice-block {{
+                width: 120px; height: 120px;
+                background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(165,243,252,0.6) 100%);
+                border: 2px solid rgba(255,255,255,0.8); border-radius: 15px;
+                box-shadow: 0 10px 20px rgba(0,0,0,0.3), inset 0 0 20px rgba(255,255,255,0.5);
+                display: flex; justify-content: center; align-items: center;
+                font-size: 20px; font-weight: 900; color: #083344;
+                cursor: pointer; transition: all 0.1s; backdrop-filter: blur(5px);
+            }}
+            .ice-block:active {{ transform: scale(0.95); }}
+            .shattered {{ background: transparent !important; border: none !important; box-shadow: none !important; color: transparent !important; pointer-events: none; }}
+            .shattered::after {{ content: '💥'; font-size: 60px; color: white; display: block; animation: fadeOut 1s forwards; }}
+            
+            .ant-game-area {{ 
+                position: relative; width: 100%; height: 450px; 
+                background: radial-gradient(circle, #5c4033 0%, #27160a 100%); 
+                border-radius: 20px; overflow: hidden; 
+                border: 2px solid #8b5a2b; box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+                cursor: crosshair;
+            }}
+            #bread {{
+                position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                font-size: 80px; transition: transform 0.2s; z-index: 10;
+            }}
+            .ant {{ 
+                position: absolute; font-size: 35px; cursor: pointer; 
+                transition: transform 0.3s ease-out; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.8)); z-index: 20;
+            }}
+            .screen-crack {{
+                position: absolute; font-size: 80px; z-index: 30;
+                animation: fadeOut 0.8s forwards; pointer-events: none; transform: translate(-50%, -50%);
+            }}
+            @keyframes fadeOut {{ 0% {{ opacity: 1; transform: scale(1) translate(-50%, -50%); }} 100% {{ opacity: 0; transform: scale(1.5) translate(-50%, -50%); }} }}
+            
+            .btn {{ font-family: 'SeoulNamsan', sans-serif; background: linear-gradient(45deg, #c084fc, #fbcfe8); color: #1e1b4b; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 900; cursor: pointer; margin-bottom: 15px; font-size: 18px; box-shadow: 0 4px 15px rgba(192, 132, 252, 0.4); transition: transform 0.1s; }}
             .btn:active {{ transform: scale(0.95); }}
         </style>
         </head>
         <body>
-        <h4>⌨️ 분노의 기계식 키보드 (마구 눌러보세요!)</h4>
-        <div class="keyboard-container"><div class="keycap" id="customKeycap">{target_name}</div></div>
+
+        <h4>🧊 분노의 얼음 깨기 (클릭해서 박살내세요!)</h4>
+        <div class="ice-container">
+            <div class="ice-block" onclick="breakIce(this)">스트레스</div>
+            <div class="ice-block" onclick="breakIce(this)">월요병</div>
+            <div class="ice-block" onclick="breakIce(this)">피로감</div>
+            <div class="ice-block" onclick="breakIce(this)">우울감</div>
+        </div>
+
         <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
-        <h4>🐜 모던 스트레스 개미 잡기</h4>
+
+        <h4>🍞 내 식빵 지키기 (개미를 터치해 화면을 깨버리세요!)</h4>
         <button class="btn" onclick="spawnAnts(5)">+ 개미 5마리 소환</button>
-        <div class="ant-game-area" id="antContainer"></div>
+        <div class="ant-game-area" id="antContainer">
+            <div id="bread">🍞</div>
+        </div>
+
         <script>
-            const mechSoundUrl = 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'; 
-            const squishSoundUrl = 'https://assets.mixkit.co/active_storage/sfx/2783/2783-preview.mp3'; 
-            function playSound(url) {{ let audio = new Audio(url); audio.volume = 0.7; audio.play().catch(e => console.log("Audio blocked")); }}
-            const keycap = document.getElementById('customKeycap');
-            keycap.addEventListener('pointerdown', function() {{ playSound(mechSoundUrl); }});
+            const glassSound = 'https://assets.mixkit.co/active_storage/sfx/2685/2685-preview.mp3'; 
+            const squishSound = 'https://assets.mixkit.co/active_storage/sfx/2783/2783-preview.mp3'; 
+            const eatSound = 'https://assets.mixkit.co/active_storage/sfx/2902/2902-preview.mp3';
+
+            function playSound(url) {{ let audio = new Audio(url); audio.volume = 0.6; audio.play().catch(e => console.log("Audio blocked")); }}
+
+            function breakIce(el) {{
+                if(el.classList.contains('shattered')) return;
+                playSound(glassSound);
+                el.classList.add('shattered');
+                setTimeout(() => {{ el.style.display = 'none'; }}, 1000);
+            }}
+
             const antContainer = document.getElementById('antContainer');
+            const bread = document.getElementById('bread');
+            let breadScale = 1.0;
+
             function spawnAnts(count) {{
                 for(let i=0; i<count; i++) {{
                     let ant = document.createElement('div'); ant.className = 'ant'; ant.innerHTML = '🐜';
-                    let x = Math.random() * (antContainer.clientWidth - 50); let y = Math.random() * (antContainer.clientHeight - 50);
-                    ant.style.left = x + 'px'; ant.style.top = y + 'px'; antContainer.appendChild(ant); moveAnt(ant);
+                    
+                    let edge = Math.floor(Math.random() * 4);
+                    let x, y;
+                    if(edge===0) {{ x = Math.random() * antContainer.clientWidth; y = -30; }}
+                    else if(edge===1) {{ x = antContainer.clientWidth + 30; y = Math.random() * antContainer.clientHeight; }}
+                    else if(edge===2) {{ x = Math.random() * antContainer.clientWidth; y = antContainer.clientHeight + 30; }}
+                    else {{ x = -30; y = Math.random() * antContainer.clientHeight; }}
+                    
+                    ant.style.left = x + 'px'; ant.style.top = y + 'px'; 
+                    antContainer.appendChild(ant); 
+                    moveAntToBread(ant);
+
                     ant.addEventListener('pointerdown', function() {{
-                        playSound(squishSoundUrl);
-                        let splat = document.createElement('div'); splat.className = 'splat'; splat.innerHTML = '💥';
-                        splat.style.left = this.style.left; splat.style.top = this.style.top; antContainer.appendChild(splat);
-                        this.remove(); setTimeout(() => {{ splat.remove(); }}, 1000);
+                        playSound(squishSound);
+                        let crack = document.createElement('div'); crack.className = 'screen-crack'; crack.innerHTML = '🕸️'; 
+                        crack.style.left = (parseFloat(this.style.left) + 15) + 'px'; 
+                        crack.style.top = (parseFloat(this.style.top) + 15) + 'px'; 
+                        antContainer.appendChild(crack);
+                        this.remove(); 
+                        setTimeout(() => {{ crack.remove(); }}, 800);
                     }});
                 }}
             }}
-            function moveAnt(ant) {{
+
+            function moveAntToBread(ant) {{
                 let moveInterval = setInterval(() => {{
                     if(!document.body.contains(ant)) {{ clearInterval(moveInterval); return; }}
+                    
                     let currentX = parseFloat(ant.style.left); let currentY = parseFloat(ant.style.top);
-                    let newX = currentX + (Math.random() * 80 - 40); let newY = currentY + (Math.random() * 80 - 40);
-                    newX = Math.max(10, Math.min(newX, antContainer.clientWidth - 50)); newY = Math.max(10, Math.min(newY, antContainer.clientHeight - 50));
-                    let angle = Math.atan2(newY - currentY, newX - currentX) * 180 / Math.PI;
-                    ant.style.transform = `rotate(${{angle + 90}}deg)`; ant.style.left = newX + 'px'; ant.style.top = newY + 'px';
-                }}, 600); 
+                    let targetX = antContainer.clientWidth / 2 - 15; 
+                    let targetY = antContainer.clientHeight / 2 - 15;
+                    
+                    let dx = targetX - currentX; let dy = targetY - currentY;
+                    let distance = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if(distance < 40) {{
+                        playSound(eatSound);
+                        breadScale -= 0.05;
+                        if(breadScale < 0.2) breadScale = 0.2;
+                        bread.style.transform = `translate(-50%, -50%) scale(${{breadScale}})`;
+                        ant.remove();
+                        clearInterval(moveInterval);
+                        return;
+                    }}
+                    
+                    let speed = 3;
+                    let newX = currentX + (dx / distance) * speed;
+                    let newY = currentY + (dy / distance) * speed;
+                    
+                    let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                    ant.style.transform = `rotate(${{angle + 90}}deg)`; 
+                    ant.style.left = newX + 'px'; ant.style.top = newY + 'px';
+                }}, 50); 
             }}
-            spawnAnts(4); 
+
+            spawnAnts(3); 
         </script>
         </body>
         </html>
@@ -459,7 +598,7 @@ else:
                         st.rerun()
 
 # ==========================================
-# [푸터] 사내상담센터 안내 및 면책 조항
+# [푸터] 면책 조항 (로그인 후 화면 하단)
 # ==========================================
 st.markdown("""
 <hr style="border-color: rgba(255,255,255,0.1); margin-top: 50px;">
@@ -467,63 +606,6 @@ st.markdown("""
     ⚠️ <b>본 '마음 상담소'의 답변은 AI에 의해 생성된 위로 메시지이며, 전문적인 의학적 진단이나 심리 치료를 대체할 수 없습니다.</b><br>
     심각한 우울감이나 스트레스가 지속될 경우, <b>사내 심리상담센터(심즈업 심리상담 070-4192-7762)</b> 또는 전문 의료기관의 도움을 받으시길 권장합니다.
 </div>
-
-<!-- 사내상담센터 안내 표 -->
-<table class="counseling-table">
-    <thead>
-        <tr>
-            <th>지역</th>
-            <th>근무지</th>
-            <th>장소</th>
-            <th>상담사명</th>
-            <th>운영시간</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td rowspan="4" style="font-weight: bold; color: #fbcfe8;">포항</td>
-            <td>포항본사</td>
-            <td rowspan="2">늘푸른솔커뮤니티센터<br>1층 회의실</td>
-            <td rowspan="2">윤영임</td>
-            <td rowspan="2">매주 화, 격주 목<br>09:00~18:00</td>
-        </tr>
-        <tr>
-            <td>포항사업실</td>
-        </tr>
-        <tr>
-            <td>포항양극재</td>
-            <td>신사무동 4층 상담실</td>
-            <td rowspan="2">김진아</td>
-            <td>매주 월<br>09:00~18:00</td>
-        </tr>
-        <tr>
-            <td>포항음극재</td>
-            <td>사무동 1층 보건실</td>
-            <td>격주 목<br>09:00~18:00</td>
-        </tr>
-        <tr>
-            <td rowspan="2" style="font-weight: bold; color: #fbcfe8;">광양</td>
-            <td>광양사업실</td>
-            <td>태인동 사무소<br>3층 마음쉼터</td>
-            <td>박정숙</td>
-            <td>매주 수<br>09:00~18:00</td>
-        </tr>
-        <tr>
-            <td>광양양극재</td>
-            <td>창의동 2층<br>건강관리실 內 고충상담실</td>
-            <td>이혜주</td>
-            <td>매주 화<br>09:00~18:00</td>
-        </tr>
-        <tr>
-            <td style="font-weight: bold; color: #fbcfe8;">세종</td>
-            <td>세종음극재</td>
-            <td>2공장 복지동<br>2층 혼창통</td>
-            <td>김유진</td>
-            <td>매주 화<br>10:00~19:00</td>
-        </tr>
-    </tbody>
-</table>
-
 <div style="text-align: center; color: #64748b; font-size: 13px; margin-top: 20px;">
     © POSCO FUTURE M Smart Mind Care Center. All rights reserved.
 </div>
