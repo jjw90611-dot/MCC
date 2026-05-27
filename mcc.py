@@ -307,7 +307,8 @@ else:
                             """
                             
                             # 구글 패키지 대신 REST API로 직접 요청 (버전 에러 원천 차단)
-                            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+                            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+
                             headers = {'Content-Type': 'application/json'}
                             data = {
                                 "contents": [{"parts": [{"text": prompt}]}]
