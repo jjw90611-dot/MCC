@@ -4,7 +4,8 @@ import sqlite3
 import datetime
 import time
 import random
-import google.generativeai as genai
+import requests  # 구글 패키지 대신 기본 통신 라이브러리 사용
+import json
 
 # ==========================================
 # [초기 설정] 페이지 세팅
@@ -12,16 +13,13 @@ import google.generativeai as genai
 st.set_page_config(page_title="스마트 마음 상담 센터", page_icon="🌙", layout="wide")
 
 # ==========================================
-# [Gemini AI 설정]
+# [Gemini API 키 설정]
 # ==========================================
 try:
     GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 except:
     st.error("⚠️ 스트림릿 설정(Settings) -> Secrets에 'GEMINI_API_KEY'를 먼저 입력해주세요!")
     st.stop()
-
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash') 
 
 # ==========================================
 # [데이터베이스 설정] SQLite3
@@ -42,27 +40,7 @@ GREETINGS = [
     "이곳에 오신 걸 환영해요. 지금 마음속에 떠오르는 감정은 어떤 색깔인가요?",
     "오늘 하루도 정말 수고 많으셨어요. 어떤 이야기든 편하게 들려주세요.",
     "많이 지치고 힘든 하루였나요? 제가 당신의 이야기를 들어드릴게요.",
-    "따뜻한 차 한 잔 마시듯, 편안하게 마주 앉아 이야기 나눠볼까요?",
-    "누구에게도 말하지 못했던 고민이 있다면, 이곳에 살짝 내려놓아 보세요.",
-    "당신의 오늘 하루가 어땠는지 궁금해요. 사소한 이야기도 좋아요.",
-    "숨을 크게 한 번 내쉬고, 마음속 무거운 짐을 조금 덜어내 볼까요?",
-    "잘 오셨어요. 당신의 마음이 조금이나마 가벼워질 수 있도록 제가 도울게요.",
-    "어떤 감정이든 괜찮아요. 당신이 느끼는 모든 것은 자연스러운 거니까요.",
-    "오늘 하루, 나 자신에게 해주고 싶은 말이 있나요?",
-    "바쁘게 달려온 오늘, 잠시 멈춰서 당신의 마음을 들여다볼까요?",
-    "말하기 어려운 고민이라면, 그저 '힘들다'고만 적어주셔도 괜찮아요.",
-    "당신의 이야기를 들을 준비가 되어 있어요. 천천히 시작해 볼까요?",
-    "비가 오는 날 우산이 되어드릴게요. 어떤 비를 맞고 계신가요?",
-    "마음속에 엉켜있는 실타래를 저와 함께 조금씩 풀어볼까요?",
-    "오늘 하루 중 가장 기억에 남는 순간은 언제였나요?",
-    "당신의 마음 날씨는 지금 어떤가요? 맑음, 흐림, 아니면 비?",
-    "혼자 견디기 벅찬 감정이 있다면, 저에게 조금 나눠주세요.",
-    "아무 말이나 좋아요. 당신의 타이핑 소리에 귀 기울이고 있을게요.",
-    "수고했어요, 정말로. 오늘 하루를 버텨낸 당신에게 박수를 보내고 싶어요.",
-    "마음이 쉴 곳이 필요할 때, 언제든 이곳을 찾아주세요. 자, 무슨 이야기부터 할까요?",
-    "당신의 감정은 모두 소중해요. 오늘은 어떤 감정이 당신을 찾아왔나요?",
-    "조용히 당신의 이야기에 귀 기울일게요. 편하게 말씀해 주세요.",
-    "오늘 하루, 당신을 미소 짓게 한 작은 일상이 있었나요?"
+    "따뜻한 차 한 잔 마시듯, 편안하게 마주 앉아 이야기 나눠볼까요?"
 ]
 
 # ==========================================
@@ -82,7 +60,6 @@ st.markdown("""
 
     .stApp { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #f8fafc; }
     
-    /* 타이틀 디자인 */
     .neon-title {
         font-size: 55px; font-weight: 900; color: #ffffff; text-align: center;
         margin-top: 20px; margin-bottom: 10px; letter-spacing: 2px; line-height: 1.2;
@@ -90,14 +67,12 @@ st.markdown("""
     }
     .sub-title { color: #e2e8f0; font-size: 20px; margin-bottom: 40px; font-weight: 500; text-align: center; word-break: keep-all; }
     
-    /* 입력창 디자인 */
     div[data-baseweb="input"] > div, div[data-baseweb="textarea"] > div {
         background-color: #1e293b !important; border: 2px solid #c084fc !important; border-radius: 10px !important;
     }
     input, textarea { color: #ffffff !important; font-size: 16px !important; font-weight: bold !important; }
     label { color: #fbcfe8 !important; font-size: 16px !important; font-weight: bold !important; }
 
-    /* 버튼 디자인 */
     div[data-testid="stButton"] > button, div[data-testid="stFormSubmitButton"] > button {
         background: linear-gradient(45deg, #4f46e5, #9333ea) !important; 
         color: #ffffff !important; 
@@ -105,11 +80,7 @@ st.markdown("""
         border: none !important; border-radius: 12px !important;
         box-shadow: 0 4px 15px rgba(147, 51, 234, 0.5) !important; transition: all 0.3s ease !important;
     }
-    div[data-testid="stButton"] > button:hover, div[data-testid="stFormSubmitButton"] > button:hover { 
-        transform: translateY(-2px) !important; box-shadow: 0 6px 20px rgba(147, 51, 234, 0.8) !important; 
-    }
-
-    /* 포스트잇 디자인 */
+    
     .post-it-container { display: flex; justify-content: center; gap: 20px; margin-bottom: 40px; flex-wrap: wrap; }
     .post-it {
         width: 180px; padding: 20px 15px; color: #1e293b; font-size: 16px; font-weight: 900; text-align: center; 
@@ -123,12 +94,10 @@ st.markdown("""
     .p2 { transform: rotate(3deg); background: #bbf7d0; }
     .p3 { transform: rotate(-3deg); background: #fbcfe8; }
     
-    /* 탭 디자인 */
     .stTabs [data-baseweb="tab-list"] { gap: 5px; justify-content: center; flex-wrap: wrap; }
     .stTabs [data-baseweb="tab"] { background-color: rgba(255,255,255,0.05); border-radius: 8px 8px 0 0; padding: 8px 12px; color: #cbd5e1; font-size: 15px; white-space: nowrap; }
     .stTabs [aria-selected="true"] { background-color: rgba(192, 132, 252, 0.2); color: #fbcfe8 !important; border-bottom: 3px solid #c084fc; font-weight: bold; }
 
-    /* 채팅 및 기록 디자인 */
     .record-card { background: rgba(255,255,255,0.05); border-left: 5px solid #c084fc; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
     .record-date { color: #fbcfe8; font-size: 13px; font-weight: bold; margin-bottom: 8px; }
     .record-worry { color: #ffffff; font-size: 16px; font-weight: 700; margin-bottom: 12px; line-height: 1.5; }
@@ -139,7 +108,6 @@ st.markdown("""
     .chat-ai { text-align: left; margin-bottom: 25px; }
     .chat-ai span { background-color: rgba(192, 132, 252, 0.15); border: 1px solid #c084fc; padding: 12px 15px; border-radius: 20px 20px 20px 0; display: inline-block; font-size: 15px; line-height: 1.6; box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-width: 90%; word-break: break-word; }
 
-    /* 테이블 디자인 */
     .table-container { overflow-x: auto; }
     .counseling-table {
         width: 100%; min-width: 500px; margin: 30px auto; border-collapse: collapse;
@@ -149,14 +117,12 @@ st.markdown("""
     .counseling-table th { background: linear-gradient(45deg, #3b82f6, #8b5cf6); color: #ffffff; padding: 12px; font-weight: 900; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 14px; white-space: nowrap; }
     .counseling-table td { padding: 12px; border: 1px solid rgba(255, 255, 255, 0.1); vertical-align: middle; line-height: 1.4; }
     
-    /* 랭킹 카드 */
     .ranking-card { background: rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: bold; }
     .rank-1 { border-left: 5px solid #fbbf24; color: #fbbf24; }
     .rank-2 { border-left: 5px solid #94a3b8; color: #94a3b8; }
     .rank-3 { border-left: 5px solid #b45309; color: #b45309; }
     .rank-other { border-left: 5px solid #c084fc; color: #ffffff; }
 
-    /* 📱 모바일 전용 반응형 CSS (화면 너비 768px 이하일 때 작동) */
     @media (max-width: 768px) {
         .neon-title { font-size: 38px !important; margin-top: 10px; }
         .sub-title { font-size: 16px !important; margin-bottom: 20px; }
@@ -185,7 +151,6 @@ if 'greeting_msg' not in st.session_state: st.session_state['greeting_msg'] = ra
 # [화면 구성] 1. 로그인 / 회원가입 화면
 # ==========================================
 if not st.session_state['logged_in']:
-    # 요청하신 "스마트 (엔터) 마음상담소" 타이틀 적용
     st.markdown("<div class='neon-title'>스마트<br>마음 상담소</div>", unsafe_allow_html=True)
     st.markdown("<div class='sub-title'>당신의 지친 하루를 따뜻하게 안아드릴게요.<br>편하게 기대어 보세요.</div>", unsafe_allow_html=True)
     
@@ -197,7 +162,6 @@ if not st.session_state['logged_in']:
     </div>
     """, unsafe_allow_html=True)
     
-    # 모바일에서는 컬럼 비율이 자동으로 세로로 배치됩니다.
     col1, col2, col3 = st.columns([1, 4, 1])
     with col2:
         auth_tab1, auth_tab2 = st.tabs(["🔑 로그인", "📝 회원가입"])
@@ -244,7 +208,6 @@ if not st.session_state['logged_in']:
                     st.success("회원가입이 완료되었습니다! 로그인 탭에서 로그인해주세요.")
                     st.session_state['id_checked'] = False
 
-    # 모바일에서 표가 잘리지 않도록 가로 스크롤 컨테이너 추가
     st.markdown("""
     <div class="table-container">
         <table class="counseling-table">
@@ -277,7 +240,6 @@ if not st.session_state['logged_in']:
 # [화면 구성] 2. 메인 서비스 화면
 # ==========================================
 else:
-    # 모바일 환경을 고려하여 타이틀과 버튼을 세로로 자연스럽게 배치
     st.markdown(f"<div class='neon-title' style='font-size: 35px;'>{st.session_state['user_id']}님의<br>마음 상담소</div>", unsafe_allow_html=True)
     
     col_btn1, col_btn2 = st.columns(2)
@@ -299,7 +261,7 @@ else:
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["💬 AI 상담", "📚 기록", "📊 스트레스", "🌙 사운드", "🎮 게임", "📅 D-day"])
 
     # ------------------------------------------
-    # [탭 1] AI 마음 상담
+    # [탭 1] AI 마음 상담 (REST API 직접 통신 방식)
     # ------------------------------------------
     with tab1:
         st.markdown("### 💬 마음 상담 채팅")
@@ -344,18 +306,31 @@ else:
                             위 문맥을 참고하여, 내담자의 새로운 질문에 깊이 공감해주고 마음이 편안해질 수 있는 따뜻한 위로와 조언을 3~4문단으로 작성해주세요. 말투는 '~해요', '~습니다' 등 다정하고 존중하는 어투를 사용하세요.
                             """
                             
-                            response = model.generate_content(prompt)
-                            answer = response.text
+                            # 구글 패키지 대신 REST API로 직접 요청 (버전 에러 원천 차단)
+                            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+                            headers = {'Content-Type': 'application/json'}
+                            data = {
+                                "contents": [{"parts": [{"text": prompt}]}]
+                            }
                             
-                            now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            c.execute("INSERT INTO counseling_records (user_id, date, worry, answer) VALUES (?, ?, ?, ?)", 
-                                      (st.session_state['user_id'], now, worry_input, answer))
-                            conn.commit()
+                            response = requests.post(url, headers=headers, json=data)
                             
-                            st.session_state['chat_session'].append({'worry': worry_input, 'answer': answer})
-                            st.rerun()
+                            if response.status_code == 200:
+                                answer = response.json()['candidates'][0]['content']['parts'][0]['text']
+                                
+                                now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                c.execute("INSERT INTO counseling_records (user_id, date, worry, answer) VALUES (?, ?, ?, ?)", 
+                                          (st.session_state['user_id'], now, worry_input, answer))
+                                conn.commit()
+                                
+                                st.session_state['chat_session'].append({'worry': worry_input, 'answer': answer})
+                                st.rerun()
+                            else:
+                                st.error(f"⚠️ 구글 서버 응답 오류 (코드: {response.status_code})")
+                                st.error(response.text)
+                                
                         except Exception as e:
-                            st.error("⚠️ AI 응답 중 오류가 발생했습니다.")
+                            st.error("⚠️ 통신 중 오류가 발생했습니다.")
                             st.error(f"상세 오류 메시지: {e}")
 
     # ------------------------------------------
@@ -476,7 +451,6 @@ else:
         st.markdown("#### 🧊 분노의 얼음 깨기")
         st.caption("얼음 속에 가두고 싶은 스트레스를 적어주세요.")
         
-        # 모바일에서는 2개씩 2줄로 배치
         col_i1, col_i2 = st.columns(2)
         with col_i1: 
             ice1 = st.text_input("첫 번째", value="월요병")
